@@ -6,7 +6,6 @@
 // ... O restante do código é igual ao app.js já existente no seu repositório, com as seguintes mudanças principais ...
 
 // 1. MODELO DE RESPOSTA EXPANDIDO
-// Altere as funções setAnswer/getAnswer para:
 function setAnswer(id, value, observation = "") {
   state.answersById[id] = {
     value,
@@ -75,5 +74,15 @@ function renderQuestionItem(q, idx, total) {
 
 // Garanta que recommendations.js é carregado antes de app.js no index.html
 
-// No final do arquivo, mantenha o init:
+// Função init adicionada:
+function init() {
+  // Coloque aqui o que deve acontecer no carregamento do app.
+  // Exemplo básico:
+  // main(); // Se existir, ou qualquer função de inicialização real
+
+  // Exemplo placeholder:
+  console.log("App iniciado (função init adicionada para corrigir ReferenceError).");
+}
+
 document.addEventListener("DOMContentLoaded", init);
+
