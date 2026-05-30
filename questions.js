@@ -389,7 +389,7 @@ const RDC15_MODULES = new Set([
   "Água",
   "Consignados",
   "Rastreabilidade",
-  "Integração CC"
+  "Integração CC",
   "Qualidade e Acreditação"
 ]);
 
