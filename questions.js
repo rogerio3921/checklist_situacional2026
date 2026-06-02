@@ -1,11 +1,190 @@
 /**
- * PERGUNTAS - NS CheckList Situacional CME v1 (SANEADO)
- * Total real: 266 perguntas
- * Base revisada para consistência estrutural, categórica e taxonômica
- * Mantém compatibilidade com o app atual
+ * PERGUNTAS - NS CheckList Situacional CME v2
+ * Completo, atualizado e compatível com a Fase 2 / Implementação 1
+ * Acrescenta:
+ * - criticality
+ * - guidance.sim / guidance.parcial / guidance.nao
+ * Mantém:
+ * - ids
+ * - módulos
+ * - categorias
+ * - pesos
+ * - compatibilidade com o app
  */
 
-const questions = [
+function buildGuidance({ achado, impacto, base, melhoria, acoes }) {
+  return {
+    achado: achado || "",
+    impacto: impacto || "",
+    base: base || "",
+    melhoria: melhoria || "",
+    acoes: Array.isArray(acoes) ? acoes : []
+  };
+}
+
+function guidanceByNorma(area, tema) {
+  return {
+    sim: buildGuidance({
+      achado: `${tema} implantado e operacional no contexto de ${area}.`,
+      impacto: "Favorece a segurança do processamento, a padronização das rotinas e a prontidão para monitoramento e auditoria.",
+      base: "RDC15/2012 e orientações técnicas da Anvisa aplicáveis ao processamento de produtos para saúde.",
+      melhoria: "Manter a prática implantada, com monitoramento periódico, revisão do processo e registro das evidências.",
+      acoes: [
+        "Monitorar periodicamente a conformidade da rotina.",
+        "Revisar o procedimento de forma periódica.",
+        "Registrar evidências da execução e do controle."
+      ]
+    }),
+    parcial: buildGuidance({
+      achado: `${tema} existente, porém com lacunas de padronização, execução ou registro em ${area}.`,
+      impacto: "Reduz a confiabilidade do processo, dificulta o controle operacional e fragiliza a investigação de desvios.",
+      base: "RDC15/2012 e orientações técnicas da Anvisa aplicáveis ao processamento de produtos para saúde.",
+      melhoria: "Revisar e padronizar o processo, assegurando execução uniforme, capacitação da equipe e evidências documentais.",
+      acoes: [
+        "Revisar o fluxo atualmente adotado.",
+        "Padronizar o procedimento e os registros associados.",
+        "Treinar a equipe quanto à rotina definida.",
+        "Auditar a aderência ao processo."
+      ]
+    }),
+    nao: buildGuidance({
+      achado: `Ausência de ${tema} estruturado em ${area}.`,
+      impacto: "Compromete a segurança do processamento, fragiliza o controle da etapa e reduz a prontidão para investigação e auditoria.",
+      base: "RDC15/2012 e orientações técnicas da Anvisa aplicáveis ao processamento de produtos para saúde.",
+      melhoria: "Implantar o processo com definição de fluxo, responsáveis, registros, monitoramento e capacitação da equipe.",
+      acoes: [
+        "Definir o fluxo operacional da etapa.",
+        "Formalizar procedimento e registros mínimos.",
+        "Treinar a equipe envolvida.",
+        "Monitorar a implantação e a aderência."
+      ]
+    })
+  };
+}
+
+function guidanceByGoodPractice(area, tema) {
+  return {
+    sim: buildGuidance({
+      achado: `${tema} implantado em ${area}.`,
+      impacto: "Contribui para organização, previsibilidade e melhoria contínua do desempenho do setor.",
+      base: "Boa prática gerencial e operacional.",
+      melhoria: "Manter a prática implantada e revisar periodicamente sua efetividade.",
+      acoes: [
+        "Acompanhar a continuidade da prática.",
+        "Revisar periodicamente sua efetividade."
+      ]
+    }),
+    parcial: buildGuidance({
+      achado: `${tema} parcialmente estruturado em ${area}.`,
+      impacto: "Limita o aproveitamento gerencial das informações e reduz a capacidade de melhoria contínua.",
+      base: "Boa prática gerencial e operacional.",
+      melhoria: "Estruturar melhor o processo, com padronização, acompanhamento e análise periódica dos resultados.",
+      acoes: [
+        "Padronizar os critérios utilizados.",
+        "Definir rotina de acompanhamento.",
+        "Registrar e analisar resultados."
+      ]
+    }),
+    nao: buildGuidance({
+      achado: `Ausência de ${tema} estruturado em ${area}.`,
+      impacto: "Reduz a capacidade de gestão, previsibilidade e tomada de decisão sobre o desempenho do setor.",
+      base: "Boa prática gerencial e operacional.",
+      melhoria: "Implantar o acompanhamento do processo para apoiar gestão, organização e melhoria operacional.",
+      acoes: [
+        "Definir escopo e objetivo do acompanhamento.",
+        "Estabelecer campos ou indicadores mínimos.",
+        "Capacitar responsáveis pelo registro e análise."
+      ]
+    })
+  };
+}
+
+function rastreabilidadeGuidance() {
+  return {
+    sim: buildGuidance({
+      achado: "A rastreabilidade do processamento está implantada e operacional.",
+      impacto: "Favorece a investigação de falhas, a recuperação de histórico e a prontidão para auditorias.",
+      base: "RDC 15/2012 exige rastreabilidade do processamento e sistema de informação manual ou automatizado.",
+      melhoria: "Manter a padronização e revisar periodicamente a qualidade dos registros.",
+      acoes: [
+        "Monitorar a completude dos registros.",
+        "Revisar periodicamente os campos obrigatórios.",
+        "Auditar a consistência das informações registradas."
+      ]
+    }),
+    parcial: buildGuidance({
+      achado: "A rastreabilidade existe, mas apresenta lacunas de registro ou inconsistência no preenchimento.",
+      impacto: "Reduz a confiabilidade das informações e dificulta a análise de desvios e eventos relacionados ao processamento.",
+      base: "RDC 15/2012 exige rastreabilidade do processamento e sistema de informação manual ou automatizado.",
+      melhoria: "Padronizar os registros e fortalecer a consistência do preenchimento.",
+      acoes: [
+        "Revisar os campos atualmente utilizados.",
+        "Eliminar registros incompletos ou redundantes.",
+        "Capacitar a equipe para preenchimento uniforme.",
+        "Monitorar periodicamente a conformidade dos registros."
+      ]
+    }),
+    nao: buildGuidance({
+      achado: "Ausência de rastreabilidade estruturada do processamento.",
+      impacto: "Fragiliza a investigação de falhas, a recuperação de histórico do processamento e a prontidão para auditorias.",
+      base: "RDC 15/2012 exige rastreabilidade do processamento e sistema de informação manual ou automatizado.",
+      melhoria: "Padronizar o registro da carga, ciclo, data, profissional responsável e destino do material.",
+      acoes: [
+        "Definir campos mínimos obrigatórios de rastreabilidade.",
+        "Revisar formulários físicos ou parâmetros do sistema.",
+        "Treinar a equipe para preenchimento correto.",
+        "Auditar periodicamente a consistência dos registros."
+      ]
+    })
+  };
+}
+
+function enrichQuestion(q) {
+  const normModules = new Set([
+    "Recepção",
+    "Expurgo",
+    "Limpeza",
+    "Preparo",
+    "Embalagem",
+    "Esterilização",
+    "Armazenamento",
+    "Distribuição",
+    "Governança",
+    "Estrutura",
+    "RH",
+    "Consignados",
+    "Rastreabilidade",
+    "Água"
+  ]);
+
+  const norma = normModules.has(q.module) ? "RDC15/2012" : "nãoRDC";
+
+  let criticality = "Média";
+  if (q.layer === "C") criticality = "Alta";
+  if (q.category === "C6" || q.category === "C5" || q.category === "C3") criticality = "Alta";
+  if (q.module === "Esterilização" || q.module === "Rastreabilidade" || q.module === "Limpeza") criticality = "Alta";
+  if (q.module === "Tecnologia" || q.module === "Sustentabilidade") criticality = "Média";
+  if (q.layer === "I") criticality = "Baixa";
+  if (q.id === 83 || q.id === 88 || q.id === 253 || q.id === 259) criticality = "Crítica";
+
+  let guidance;
+  if (q.module === "Rastreabilidade") {
+    guidance = rastreabilidadeGuidance();
+  } else if (norma === "RDC15/2012") {
+    guidance = guidanceByNorma(q.module, q.text.toLowerCase());
+  } else {
+    guidance = guidanceByGoodPractice(q.module, q.text.toLowerCase());
+  }
+
+  return {
+    ...q,
+    norma,
+    criticality,
+    guidance
+  };
+}
+
+const rawQuestions = [
   { id: 1, text: "Existe protocolo formal para recepção de materiais contaminados provenientes das unidades assistenciais e centro cirúrgico?", module: "Recepção", submodule: "Recepção", layer: "C", category: "C1", weight: 1 },
   { id: 2, text: "A recepção dos materiais é realizada em área exclusiva da CME?", module: "Recepção", submodule: "Recepção", layer: "C", category: "C1", weight: 1 },
   { id: 3, text: "Existe registro formal de entrada dos materiais contendo data, horário, setor de origem e responsável?", module: "Recepção", submodule: "Recepção", layer: "C", category: "C4", weight: 1 },
@@ -151,47 +330,47 @@ const questions = [
   { id: 139, text: "Existe reunião periódica para análise de desempenho da CME?", module: "Governança", submodule: "Governança", layer: "P", category: "P5", weight: 1 },
   { id: 140, text: "Existe planejamento estratégico para melhoria contínua da CME?", module: "Governança", submodule: "Governança", layer: "I", category: "I1", weight: 1 },
 
-  { id: 141, text: "A CME possui estrutura física compatível com o volume de materiais processados?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 142, text: "Existe separação física entre área suja, área limpa e área esterilizada?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 143, text: "O fluxo de materiais é unidirecional dentro da CME?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C3", weight: 1 },
-  { id: 144, text: "As barreiras físicas impedem o cruzamento entre materiais contaminados e esterilizados?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 145, text: "As áreas da CME possuem identificação adequada?", module: "Governança", submodule: "Estrutura", layer: "P", category: "P2", weight: 1 },
-  { id: 146, text: "Os pisos são laváveis e resistentes à desinfecção?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 147, text: "As paredes são revestidas com material lavável?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 148, text: "O teto possui acabamento adequado para ambientes hospitalares?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 149, text: "Existe iluminação adequada em todas as áreas da CME?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 150, text: "Existe ventilação adequada nas áreas de processamento?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 151, text: "Existe sistema de exaustão na área de expurgo?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 152, text: "Existe controle de temperatura nas áreas críticas?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 153, text: "Existe controle de umidade nas áreas de armazenamento?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 154, text: "Existe área adequada para armazenamento de materiais esterilizados?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 155, text: "Existe área específica para armazenamento de materiais de embalagem?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 156, text: "Existe área destinada à manutenção de equipamentos?", module: "Governança", submodule: "Estrutura", layer: "P", category: "P2", weight: 1 },
-  { id: 157, text: "Existe área de apoio para higienização de carrinhos de transporte?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 158, text: "Existe área de armazenamento temporário de resíduos?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C7", weight: 1 },
-  { id: 159, text: "Existe acesso controlado às áreas críticas da CME?", module: "Governança", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
-  { id: 160, text: "Existe avaliação periódica da adequação da estrutura física da CME?", module: "Governança", submodule: "Estrutura", layer: "I", category: "I1", weight: 1 },
+  { id: 141, text: "A CME possui estrutura física compatível com o volume de materiais processados?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 142, text: "Existe separação física entre área suja, área limpa e área esterilizada?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 143, text: "O fluxo de materiais é unidirecional dentro da CME?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C3", weight: 1 },
+  { id: 144, text: "As barreiras físicas impedem o cruzamento entre materiais contaminados e esterilizados?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 145, text: "As áreas da CME possuem identificação adequada?", module: "Estrutura", submodule: "Estrutura", layer: "P", category: "P2", weight: 1 },
+  { id: 146, text: "Os pisos são laváveis e resistentes à desinfecção?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 147, text: "As paredes são revestidas com material lavável?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 148, text: "O teto possui acabamento adequado para ambientes hospitalares?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 149, text: "Existe iluminação adequada em todas as áreas da CME?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 150, text: "Existe ventilação adequada nas áreas de processamento?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 151, text: "Existe sistema de exaustão na área de expurgo?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 152, text: "Existe controle de temperatura nas áreas críticas?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 153, text: "Existe controle de umidade nas áreas de armazenamento?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 154, text: "Existe área adequada para armazenamento de materiais esterilizados?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 155, text: "Existe área específica para armazenamento de materiais de embalagem?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 156, text: "Existe área destinada à manutenção de equipamentos?", module: "Estrutura", submodule: "Estrutura", layer: "P", category: "P2", weight: 1 },
+  { id: 157, text: "Existe área de apoio para higienização de carrinhos de transporte?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 158, text: "Existe área de armazenamento temporário de resíduos?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C7", weight: 1 },
+  { id: 159, text: "Existe acesso controlado às áreas críticas da CME?", module: "Estrutura", submodule: "Estrutura", layer: "C", category: "C1", weight: 1 },
+  { id: 160, text: "Existe avaliação periódica da adequação da estrutura física da CME?", module: "Estrutura", submodule: "Estrutura", layer: "I", category: "I1", weight: 1 },
 
-  { id: 161, text: "Existe dimensionamento adequado da equipe da CME?", module: "Governança", submodule: "RH", layer: "P", category: "P1", weight: 1 },
-  { id: 162, text: "Existe descrição formal das funções dos profissionais da CME?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 163, text: "Existe processo formal de treinamento inicial para novos profissionais?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 164, text: "Existe programa de treinamento periódico para a equipe?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 165, text: "Existe registro das capacitações realizadas?", module: "Governança", submodule: "RH", layer: "C", category: "C4", weight: 1 },
-  { id: 166, text: "Existe avaliação periódica de competência técnica dos profissionais?", module: "Governança", submodule: "RH", layer: "P", category: "P5", weight: 1 },
-  { id: 167, text: "Existe supervisão técnica contínua das atividades da CME?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 168, text: "Existe treinamento específico sobre biossegurança?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 169, text: "Existe treinamento sobre prevenção de acidentes com material perfurocortante?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 170, text: "Existe política institucional de vacinação ocupacional para profissionais da CME?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 171, text: "Existe monitoramento de acidentes de trabalho na CME?", module: "Governança", submodule: "RH", layer: "C", category: "C6", weight: 1 },
-  { id: 172, text: "Existe registro de acidentes ocupacionais ocorridos no setor?", module: "Governança", submodule: "RH", layer: "C", category: "C4", weight: 1 },
-  { id: 173, text: "Existe investigação das causas de acidentes de trabalho?", module: "Governança", submodule: "RH", layer: "C", category: "C6", weight: 1 },
-  { id: 174, text: "Existe plano de prevenção de acidentes ocupacionais?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 175, text: "Existe uso obrigatório de EPIs nas áreas de processamento?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 176, text: "Existe controle de fornecimento de EPIs para a equipe?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 177, text: "Existe treinamento sobre uso correto de EPIs?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 178, text: "Existe monitoramento da adesão ao uso de EPIs?", module: "Governança", submodule: "RH", layer: "P", category: "P2", weight: 1 },
-  { id: 179, text: "Existe política institucional de saúde ocupacional para profissionais da CME?", module: "Governança", submodule: "RH", layer: "C", category: "C1", weight: 1 },
-  { id: 180, text: "Existe avaliação periódica das condições de trabalho da equipe?", module: "Governança", submodule: "RH", layer: "I", category: "I1", weight: 1 },
+  { id: 161, text: "Existe dimensionamento adequado da equipe da CME?", module: "RH", submodule: "RH", layer: "P", category: "P1", weight: 1 },
+  { id: 162, text: "Existe descrição formal das funções dos profissionais da CME?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 163, text: "Existe processo formal de treinamento inicial para novos profissionais?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 164, text: "Existe programa de treinamento periódico para a equipe?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 165, text: "Existe registro das capacitações realizadas?", module: "RH", submodule: "RH", layer: "C", category: "C4", weight: 1 },
+  { id: 166, text: "Existe avaliação periódica de competência técnica dos profissionais?", module: "RH", submodule: "RH", layer: "P", category: "P5", weight: 1 },
+  { id: 167, text: "Existe supervisão técnica contínua das atividades da CME?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 168, text: "Existe treinamento específico sobre biossegurança?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 169, text: "Existe treinamento sobre prevenção de acidentes com material perfurocortante?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 170, text: "Existe política institucional de vacinação ocupacional para profissionais da CME?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 171, text: "Existe monitoramento de acidentes de trabalho na CME?", module: "RH", submodule: "RH", layer: "C", category: "C6", weight: 1 },
+  { id: 172, text: "Existe registro de acidentes ocupacionais ocorridos no setor?", module: "RH", submodule: "RH", layer: "C", category: "C4", weight: 1 },
+  { id: 173, text: "Existe investigação das causas de acidentes de trabalho?", module: "RH", submodule: "RH", layer: "C", category: "C6", weight: 1 },
+  { id: 174, text: "Existe plano de prevenção de acidentes ocupacionais?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 175, text: "Existe uso obrigatório de EPIs nas áreas de processamento?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 176, text: "Existe controle de fornecimento de EPIs para a equipe?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 177, text: "Existe treinamento sobre uso correto de EPIs?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 178, text: "Existe monitoramento da adesão ao uso de EPIs?", module: "RH", submodule: "RH", layer: "P", category: "P2", weight: 1 },
+  { id: 179, text: "Existe política institucional de saúde ocupacional para profissionais da CME?", module: "RH", submodule: "RH", layer: "C", category: "C1", weight: 1 },
+  { id: 180, text: "Existe avaliação periódica das condições de trabalho da equipe?", module: "RH", submodule: "RH", layer: "I", category: "I1", weight: 1 },
 
   { id: 181, text: "A CME utiliza algum sistema informatizado para gestão do processamento de materiais?", module: "Tecnologia", submodule: "Tecnologia", layer: "I", category: "I2", weight: 1 },
   { id: 182, text: "Existe registro digital das etapas do processamento dos materiais?", module: "Tecnologia", submodule: "Tecnologia", layer: "C", category: "C4", weight: 1 },
@@ -288,31 +467,9 @@ const questions = [
   { id: 266, text: "Existe registro do processo de limpeza automatizado?", module: "Limpeza", submodule: "Limpeza", layer: "C", category: "C4", weight: 1 }
 ];
 
-/**
- * Classificação prudente de aderência normativa.
- * Observação:
- * - "RDC15/2012" aqui significa aderência principal ao escopo operacional/normativo do processamento.
- * - "nãoRDC" indica item gerencial, estratégico, tecnológico, sustentabilidade ou maturidade ampliada.
- */
-const RDC15_MODULES = new Set([
-  "Recepção",
-  "Expurgo",
-  "Limpeza",
-  "Preparo",
-  "Embalagem",
-  "Esterilização",
-  "Armazenamento",
-  "Distribuição",
-  "Consignados",
-  "Rastreabilidade",
-  "Água"
-]);
+const questions = rawQuestions.map(enrichQuestion);
 
-for (const q of questions) {
-  q.norma = RDC15_MODULES.has(q.module) ? "RDC15/2012" : "nãoRDC";
-}
-
-console.log("✓ Arquivo questions.js saneado carregado com sucesso");
+console.log("✓ Arquivo questions.js atualizado carregado com sucesso");
 console.log("✓ Total de perguntas: " + questions.length);
 
 if (typeof updateLoadingProgress === "function") {
