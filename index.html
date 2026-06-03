@@ -1,4 +1,3 @@
-```
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -88,9 +87,14 @@
 
     .kpis{display:grid;grid-template-columns:1fr;gap:10px}
     @media(min-width:700px){ .kpis{grid-template-columns:repeat(3,1fr)} }
+    .kpis-dashboard{display:grid;grid-template-columns:1fr;gap:10px}
+    @media(min-width:700px){ .kpis-dashboard{grid-template-columns:repeat(2,1fr)} }
+    @media(min-width:1100px){ .kpis-dashboard{grid-template-columns:repeat(3,1fr)} }
+
     .kpi{padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff}
     .kpi .label{font-size:12px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.02em}
     .kpi .value{font-size:22px;font-weight:1000;margin-top:6px}
+    .kpi .desc{font-size:12px;color:var(--muted);line-height:1.4;margin-top:6px}
     .kpi-last-module{grid-column:1/-1}
     .kpi-last-module .value{white-space:normal;word-break:break-word;line-height:1.2}
 
@@ -440,22 +444,31 @@
               <button class="btn btn-danger btn-sm" id="btnResetAll" type="button">Nova avaliação (limpar tudo)</button>
             </div>
 
-            <div class="kpis">
+            <div class="kpis-dashboard">
+              <div class="kpi">
+                <div class="label">Índice Parcial</div>
+                <div class="value mono" id="kpiPartial">0%</div>
+                <div class="desc">Resultado calculado apenas com base nas perguntas já respondidas.</div>
+              </div>
               <div class="kpi">
                 <div class="label">Índice Global (ponderado)</div>
                 <div class="value mono" id="kpiGlobal">0%</div>
+                <div class="desc">Resultado consolidado considerando Compliance, Performance e Inteligência.</div>
               </div>
               <div class="kpi">
                 <div class="label">Compliance (C)</div>
                 <div class="value mono" id="kpiC">0%</div>
+                <div class="desc">Requisitos, conformidade e controles essenciais do processamento.</div>
               </div>
               <div class="kpi">
                 <div class="label">Performance (P)</div>
                 <div class="value mono" id="kpiP">0%</div>
+                <div class="desc">Fluxo operacional, produtividade, organização e desempenho.</div>
               </div>
               <div class="kpi">
                 <div class="label">Inteligência (I)</div>
                 <div class="value mono" id="kpiI">0%</div>
+                <div class="desc">Gestão, tecnologia, análise e melhoria contínua.</div>
               </div>
             </div>
 
@@ -639,5 +652,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-```
-index.html
