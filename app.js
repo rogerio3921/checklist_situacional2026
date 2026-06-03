@@ -12,6 +12,10 @@
    - botão e modal de legenda das categorias
    - relatório básico em nova janela
    - relatório completo em nova janela
+   - índice parcial no dashboard e relatórios
+   - descrição explicativa de índice parcial, índice global e camadas
+   Remove dos relatórios:
+   - anexo detalhado / listagem completa de perguntas
    Não exibe no questionário:
    - observação
    - criticidade editável
@@ -82,6 +86,14 @@ const CATEGORY_LEGEND = {
       description: "Fragilidade relevante, exigindo ação prioritária para reduzir riscos operacionais, regulatórios e assistenciais."
     }
   ]
+};
+
+const INDEX_DESCRIPTIONS = {
+  partial: "Resultado calculado apenas com base nas perguntas já respondidas, refletindo o desempenho do que foi efetivamente avaliado até o momento.",
+  global: "Resultado consolidado do modelo completo, considerando a ponderação das dimensões Compliance, Performance e Inteligência.",
+  compliance: "Requisitos, conformidade e controles essenciais do processamento.",
+  performance: "Fluxo operacional, produtividade, organização e desempenho.",
+  intelligence: "Gestão, tecnologia, análise e melhoria contínua."
 };
 
 function safeJSONParse(raw, fallback) {
@@ -282,6 +294,52 @@ function computeLayerIndices(answersById) {
   return { C, P, I, Global };
 }
 
+function computePartialLayerIndices(answersById) {
+  const acc = { C: { sum: 0, max: 0 }, P: { sum: 0, max: 0 }, I: { sum: 0, max: 0 } };
+
+  for (const q of getQuestions()) {
+    const a = answersById[q.id]?.value;
+    const pts = answerToPoints(a);
+    if (pts === null) continue;
+    if (!acc[q.layer]) continue;
+
+    const w = questionFinalWeight(q);
+    acc[q.layer].sum += pts * w;
+    acc[q.layer].max += 100 * w;
+  }
+
+  const layerValues = {
+    C: acc.C.max ? Math.round((acc.C.sum / acc.C.max) * 100) : null,
+    P: acc.P.max ? Math.round((acc.P.sum / acc.P.max) * 100) : null,
+    I: acc.I.max ? Math.round((acc.I.sum / acc.I.max) * 100) : null
+  };
+
+  let weightedSum = 0;
+  let weightedTotal = 0;
+
+  if (layerValues.C !== null) {
+    weightedSum += layerValues.C * 0.5;
+    weightedTotal += 0.5;
+  }
+  if (layerValues.P !== null) {
+    weightedSum += layerValues.P * 0.3;
+    weightedTotal += 0.3;
+  }
+  if (layerValues.I !== null) {
+    weightedSum += layerValues.I * 0.2;
+    weightedTotal += 0.2;
+  }
+
+  const PartialGlobal = weightedTotal > 0 ? Math.round(weightedSum / weightedTotal) : 0;
+
+  return {
+    C: layerValues.C,
+    P: layerValues.P,
+    I: layerValues.I,
+    PartialGlobal
+  };
+}
+
 function getModuleQuestions(moduleName) {
   return getQuestions().filter(q => q.module === moduleName);
 }
@@ -397,6 +455,7 @@ const el = {
   btnClearModule: document.getElementById("btnClearModule"),
   btnToDashboard: document.getElementById("btnToDashboard"),
 
+  kpiPartial: document.getElementById("kpiPartial"),
   kpiGlobal: document.getElementById("kpiGlobal"),
   kpiC: document.getElementById("kpiC"),
   kpiP: document.getElementById("kpiP"),
@@ -705,12 +764,37 @@ function renderModuleLegendButton() {
 
 function buildUnifiedPanoramaHtml(data) {
   return `
-    <div class="grid five unified-panorama">
-      <div class="kpi-card"><div class="kpi-label">Progresso</div><div class="kpi-value">${data.stats.progress}%</div><div class="kpi-sub">${data.stats.answered}/${data.stats.total} respondidas</div></div>
-      <div class="kpi-card"><div class="kpi-label">Índice Global</div><div class="kpi-value">${data.indices.Global}%</div><div class="kpi-sub">resultado ponderado</div></div>
-      <div class="kpi-card"><div class="kpi-label">Compliance</div><div class="kpi-value">${data.indices.C}%</div><div class="kpi-sub">camada C</div></div>
-      <div class="kpi-card"><div class="kpi-label">Performance</div><div class="kpi-value">${data.indices.P}%</div><div class="kpi-sub">camada P</div></div>
-      <div class="kpi-card"><div class="kpi-label">Inteligência</div><div class="kpi-value">${data.indices.I}%</div><div class="kpi-sub">camada I</div></div>
+    <div class="grid six unified-panorama">
+      <div class="kpi-card">
+        <div class="kpi-label">Progresso</div>
+        <div class="kpi-value">${data.stats.progress}%</div>
+        <div class="kpi-sub">${data.stats.answered}/${data.stats.total} respondidas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Índice parcial</div>
+        <div class="kpi-value">${data.partialIndices.PartialGlobal}%</div>
+        <div class="kpi-sub">${escapeHtml(INDEX_DESCRIPTIONS.partial)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Índice global</div>
+        <div class="kpi-value">${data.indices.Global}%</div>
+        <div class="kpi-sub">${escapeHtml(INDEX_DESCRIPTIONS.global)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Compliance</div>
+        <div class="kpi-value">${data.indices.C}%</div>
+        <div class="kpi-sub">${escapeHtml(INDEX_DESCRIPTIONS.compliance)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Performance</div>
+        <div class="kpi-value">${data.indices.P}%</div>
+        <div class="kpi-sub">${escapeHtml(INDEX_DESCRIPTIONS.performance)}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Inteligência</div>
+        <div class="kpi-value">${data.indices.I}%</div>
+        <div class="kpi-sub">${escapeHtml(INDEX_DESCRIPTIONS.intelligence)}</div>
+      </div>
     </div>
   `;
 }
@@ -732,11 +816,12 @@ function getUnifiedReportStyles() {
     .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
     .grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
     .grid.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+    .grid.six{grid-template-columns:repeat(3,minmax(0,1fr))}
     .info-card,.kpi-card,.priority-card,.analysis-card,.summary-card,.action-card{border:1px solid #e8ecf5;border-radius:14px;padding:14px;background:#fbfcff}
     .label,.kpi-label{font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.03em}
     .value{margin-top:6px;font-size:15px;font-weight:700;color:#1f2937}
     .kpi-value,.priority-value{margin-top:8px;font-size:30px;font-weight:900;color:#1f2a44}
-    .kpi-sub,.priority-sub{margin-top:4px;font-size:12px;color:#6b7280}
+    .kpi-sub,.priority-sub{margin-top:6px;font-size:12px;color:#6b7280;line-height:1.45}
     .priority-title{font-size:14px;font-weight:800}
     .priority-bad{background:#fff5f5;border-color:#fecaca}
     .priority-bad .priority-title,.priority-bad .priority-value{color:#b91c1c}
@@ -767,7 +852,7 @@ function getUnifiedReportStyles() {
     .summary-card h3,.action-card h3{margin:0 0 8px 0;font-size:15px;color:#24324a}
     .action-card ul{margin-top:8px}
     @media print{body{background:#fff}.page{max-width:none;padding:0}.header{box-shadow:none}.section{box-shadow:none;break-inside:avoid}.actions{display:none}}
-    @media(max-width:1000px){.grid.five,.grid.two,.grid.three,.plan-grid{grid-template-columns:1fr}}
+    @media(max-width:1000px){.grid.five,.grid.two,.grid.three,.grid.six,.plan-grid{grid-template-columns:1fr}}
   `;
 }
 
@@ -803,6 +888,7 @@ function getBasicReportData() {
   const inst = state.institution || {};
   const stats = computeStats(state.answersById);
   const indices = computeLayerIndices(state.answersById);
+  const partialIndices = computePartialLayerIndices(state.answersById);
   const priority = computePriorityMatrix(state.answersById);
   const modules = getAllModules().map(moduleName => {
     const ms = computeModuleScore(moduleName, state.answersById);
@@ -847,6 +933,7 @@ function getBasicReportData() {
     generatedAt: new Date().toLocaleString("pt-BR"),
     stats,
     indices,
+    partialIndices,
     priority: {
       p1: priority.P1.length,
       p2: priority.P2.length,
@@ -905,20 +992,6 @@ function openBasicReportWindow() {
     </tr>
   `).join("");
 
-  const responsesRows = data.responses.map(item => `
-    <tr>
-      <td>${item.id}</td>
-      <td>${escapeHtml(item.module)}</td>
-      <td>${escapeHtml(item.submodule || "—")}</td>
-      <td>${escapeHtml(item.layer)} — ${escapeHtml(item.layerName)}</td>
-      <td>${escapeHtml(item.category)}${item.categoryDescription ? ` — ${escapeHtml(item.categoryDescription)}` : ""}</td>
-      <td>${escapeHtml(item.norma)}</td>
-      <td>${escapeHtml(item.criticality)}</td>
-      <td>${escapeHtml(item.answer)}</td>
-      <td>${escapeHtml(item.question)}</td>
-    </tr>
-  `).join("");
-
   const reportHtml = `
     <html lang="pt-BR">
       <head>
@@ -965,29 +1038,6 @@ function openBasicReportWindow() {
               </thead>
               <tbody>
                 ${modulesRows}
-              </tbody>
-            </table>
-          </section>
-
-          <section class="section">
-            <h2>5. Respostas Detalhadas</h2>
-            <div class="muted">Listagem completa das perguntas com resposta e criticidade sugerida.</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Módulo</th>
-                  <th>Submódulo</th>
-                  <th>Camada</th>
-                  <th>Categoria</th>
-                  <th>Norma</th>
-                  <th>Criticidade</th>
-                  <th>Resposta</th>
-                  <th>Pergunta</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${responsesRows}
               </tbody>
             </table>
           </section>
@@ -1083,7 +1133,17 @@ function interpretLayerScore(layer, score) {
     I: "gestão, tecnologia, integração, automação, análise de dados e melhoria contínua"
   }[layer] || "dimensão avaliada";
 
-  return `${layerLabel(layer)}: ${score}%. O resultado demonstra ${cls.text.toLowerCase()} Esta camada reflete principalmente ${focus}.`;
+  return `${layerLabel(layer)}: ${score}%. ${INDEX_DESCRIPTIONS[layer === "C" ? "compliance" : layer === "P" ? "performance" : "intelligence"]} O resultado demonstra ${cls.text.toLowerCase()} Esta camada reflete principalmente ${focus}.`;
+}
+
+function interpretGlobalScore(score) {
+  const cls = classifyReportScore(score);
+  return `Índice Global: ${score}%. ${INDEX_DESCRIPTIONS.global} O resultado demonstra ${cls.text.toLowerCase()} Este índice sintetiza a leitura consolidada da avaliação considerando Compliance, Performance e Inteligência.`;
+}
+
+function interpretPartialScore(score) {
+  const cls = classifyReportScore(score);
+  return `Índice Parcial: ${score}%. ${INDEX_DESCRIPTIONS.partial} O resultado demonstra ${cls.text.toLowerCase()} Este índice permite leitura mais fiel do desempenho já avaliado durante o preenchimento.`;
 }
 
 function getCompleteResponseRows() {
@@ -1198,6 +1258,7 @@ function getDetailedActionBlocks(items, mode = "nao") {
     };
   });
 }
+
 function getCompleteReportData() {
   const basic = getBasicReportData();
   const responses = getCompleteResponseRows();
@@ -1231,6 +1292,8 @@ function getCompleteReportData() {
     priorityActions: getDetailedActionBlocks(priorityFindings, "nao"),
     attentionActions: getDetailedActionBlocks(attentionFindings, "parcial"),
     layerInterpretations: {
+      partial: interpretPartialScore(basic.partialIndices.PartialGlobal),
+      global: interpretGlobalScore(basic.indices.Global),
       C: interpretLayerScore("C", basic.indices.C),
       P: interpretLayerScore("P", basic.indices.P),
       I: interpretLayerScore("I", basic.indices.I)
@@ -1257,7 +1320,7 @@ function buildExecutiveSummary(data) {
     ? `A avaliação permanece parcialmente concluída, com ${unansweredCount} item(ns) sem resposta. `
     : "";
 
-  return `A avaliação apresenta Índice Global de ${data.indices.Global}%, classificado como ${globalClass.label}. O diagnóstico indica ${globalClass.text.toLowerCase()} Foram identificados ${p1} achado(s) prioritário(s) com resposta “Não” e ${p2} ponto(s) de atenção com resposta “Parcial”. No panorama das camadas, Compliance apresenta ${data.indices.C}%, Performance ${data.indices.P}% e Inteligência ${data.indices.I}%. ${worstText} ${unfinishedText}Esta leitura deve orientar a priorização de ações corretivas, fortalecimento dos registros, melhoria dos fluxos operacionais e evolução da gestão da CME.`;
+  return `A avaliação apresenta Índice Parcial de ${data.partialIndices.PartialGlobal}% e Índice Global de ${data.indices.Global}%, sendo o índice global classificado como ${globalClass.label}. O diagnóstico indica ${globalClass.text.toLowerCase()} Foram identificados ${p1} achado(s) prioritário(s) com resposta “Não” e ${p2} ponto(s) de atenção com resposta “Parcial”. No panorama das camadas, Compliance apresenta ${data.indices.C}%, Performance ${data.indices.P}% e Inteligência ${data.indices.I}%. ${worstText} ${unfinishedText}Esta leitura deve orientar a priorização de ações corretivas, fortalecimento dos registros, melhoria dos fluxos operacionais e evolução da gestão da CME.`;
 }
 
 function buildCompleteRecommendations(data) {
@@ -1418,6 +1481,8 @@ function openCompleteReportWindow() {
   const panoramaHtml = buildUnifiedPanoramaHtml(data);
 
   const layerHtml = `
+    <div class="analysis-card"><strong>Índice parcial</strong><p>${escapeHtml(data.layerInterpretations.partial)}</p></div>
+    <div class="analysis-card"><strong>Índice global</strong><p>${escapeHtml(data.layerInterpretations.global)}</p></div>
     <div class="analysis-card"><strong>Compliance</strong><p>${escapeHtml(data.layerInterpretations.C)}</p></div>
     <div class="analysis-card"><strong>Performance</strong><p>${escapeHtml(data.layerInterpretations.P)}</p></div>
     <div class="analysis-card"><strong>Inteligência</strong><p>${escapeHtml(data.layerInterpretations.I)}</p></div>
@@ -1430,20 +1495,6 @@ function openCompleteReportWindow() {
       <td><strong>${item.pct}%</strong></td>
       <td><span class="status ${item.tone}">${escapeHtml(item.classification)}</span></td>
       <td>${escapeHtml(item.interpretation)}</td>
-    </tr>
-  `).join("");
-
-  const responsesRows = data.responses.map(item => `
-    <tr>
-      <td>${item.id}</td>
-      <td>${escapeHtml(item.module)}</td>
-      <td>${escapeHtml(item.submodule || "—")}</td>
-      <td>${escapeHtml(item.layer)} — ${escapeHtml(item.layerName)}</td>
-      <td>${escapeHtml(item.category)}${item.categoryDescription ? ` — ${escapeHtml(item.categoryDescription)}` : ""}</td>
-      <td>${escapeHtml(item.norma)}</td>
-      <td>${escapeHtml(item.criticality)}</td>
-      <td>${escapeHtml(item.answer)}</td>
-      <td>${escapeHtml(item.question)}</td>
     </tr>
   `).join("");
 
@@ -1479,7 +1530,7 @@ function openCompleteReportWindow() {
           <section class="section"><h2>1. Identificação da avaliação</h2>${institutionHtml}</section>
           <section class="section"><h2>2. Resumo executivo</h2><div class="executive">${escapeHtml(executiveSummary)}</div></section>
           <section class="section"><h2>3. Panorama geral de desempenho</h2>${panoramaHtml}</section>
-          <section class="section"><h2>4. Leitura interpretativa das camadas</h2>${layerHtml}</section>
+          <section class="section"><h2>4. Leitura interpretativa dos índices e camadas</h2>${layerHtml}</section>
 
           <section class="section">
             <h2>5. Análise por módulo</h2>
@@ -1562,27 +1613,6 @@ function openCompleteReportWindow() {
           <section class="section">
             <h2>10. Pendências de preenchimento</h2>
             ${pendingSummaryHtml}
-          </section>
-
-          <section class="section">
-            <h2>11. Anexo detalhado</h2>
-            <div class="muted">Listagem completa das perguntas para rastreabilidade da avaliação.</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Módulo</th>
-                  <th>Submódulo</th>
-                  <th>Camada</th>
-                  <th>Categoria</th>
-                  <th>Norma</th>
-                  <th>Criticidade</th>
-                  <th>Resposta</th>
-                  <th>Pergunta</th>
-                </tr>
-              </thead>
-              <tbody>${responsesRows}</tbody>
-            </table>
           </section>
         </div>
       </body>
@@ -1811,6 +1841,10 @@ function afterAnswerChanged(moduleName) {
   renderModules();
   renderLeftKPIs();
   renderModuleHeader(moduleName);
+
+  if (!el.viewDashboard.classList.contains("hidden")) {
+    showDashboard();
+  }
 }
 
 function renderModuleHeader(moduleName) {
@@ -1847,6 +1881,9 @@ function showDashboard() {
   el.rightSubtitle.textContent = "Resumo da avaliação";
 
   const idx = computeLayerIndices(state.answersById);
+  const partial = computePartialLayerIndices(state.answersById);
+
+  if (el.kpiPartial) el.kpiPartial.textContent = `${partial.PartialGlobal}%`;
   el.kpiGlobal.textContent = `${idx.Global}%`;
   el.kpiC.textContent = `${idx.C}%`;
   el.kpiP.textContent = `${idx.P}%`;
@@ -1881,6 +1918,7 @@ function showDashboard() {
 function exportTxt() {
   const inst = state.institution || {};
   const idx = computeLayerIndices(state.answersById);
+  const partial = computePartialLayerIndices(state.answersById);
   const stats = computeStats(state.answersById);
   const pm = computePriorityMatrix(state.answersById);
 
@@ -1908,6 +1946,7 @@ function exportTxt() {
   lines.push("RESUMO");
   lines.push("-".repeat(80));
   lines.push(`Progresso: ${stats.progress}% (${stats.answered}/${stats.total})`);
+  lines.push(`Índice Parcial: ${partial.PartialGlobal}%`);
   lines.push(`Índice Global (ponderado): ${idx.Global}%`);
   lines.push(`Compliance (C): ${idx.C}%`);
   lines.push(`Performance (P): ${idx.P}%`);
