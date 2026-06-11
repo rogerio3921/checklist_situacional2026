@@ -87,9 +87,31 @@
 
     .kpis{display:grid;grid-template-columns:1fr;gap:10px}
     @media(min-width:700px){ .kpis{grid-template-columns:repeat(3,1fr)} }
-    .kpis-dashboard{display:grid;grid-template-columns:1fr;gap:10px}
-    @media(min-width:700px){ .kpis-dashboard{grid-template-columns:repeat(2,1fr)} }
-    @media(min-width:1100px){ .kpis-dashboard{grid-template-columns:repeat(3,1fr)} }
+
+    .kpis-dashboard{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    .kpis-dashboard-top,
+    .kpis-dashboard-bottom{
+      display:grid;
+      gap:10px;
+    }
+    .kpis-dashboard-top{
+      grid-template-columns:1fr;
+    }
+    .kpis-dashboard-bottom{
+      grid-template-columns:1fr;
+    }
+    @media(min-width:700px){
+      .kpis-dashboard-top{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+      .kpis-dashboard-bottom{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+    }
 
     .kpi{padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff}
     .kpi .label{font-size:12px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.02em}
@@ -445,30 +467,35 @@
             </div>
 
             <div class="kpis-dashboard">
-              <div class="kpi">
-                <div class="label">Índice Parcial</div>
-                <div class="value mono" id="kpiPartial">0%</div>
-                <div class="desc">Resultado calculado apenas com base nas perguntas já respondidas.</div>
+              <div class="kpis-dashboard-top">
+                <div class="kpi">
+                  <div class="label">Índice Parcial</div>
+                  <div class="value mono" id="kpiPartial">0%</div>
+                  <div class="desc">Resultado calculado apenas com base nas perguntas já respondidas.</div>
+                </div>
+                <div class="kpi">
+                  <div class="label">Índice Global (ponderado)</div>
+                  <div class="value mono" id="kpiGlobal">0%</div>
+                  <div class="desc">Resultado consolidado considerando Compliance, Performance e Inteligência.</div>
+                </div>
               </div>
-              <div class="kpi">
-                <div class="label">Índice Global (ponderado)</div>
-                <div class="value mono" id="kpiGlobal">0%</div>
-                <div class="desc">Resultado consolidado considerando Compliance, Performance e Inteligência.</div>
-              </div>
-              <div class="kpi">
-                <div class="label">Compliance (C)</div>
-                <div class="value mono" id="kpiC">0%</div>
-                <div class="desc">Requisitos, conformidade e controles essenciais do processamento.</div>
-              </div>
-              <div class="kpi">
-                <div class="label">Performance (P)</div>
-                <div class="value mono" id="kpiP">0%</div>
-                <div class="desc">Fluxo operacional, produtividade, organização e desempenho.</div>
-              </div>
-              <div class="kpi">
-                <div class="label">Inteligência (I)</div>
-                <div class="value mono" id="kpiI">0%</div>
-                <div class="desc">Gestão, tecnologia, análise e melhoria contínua.</div>
+
+              <div class="kpis-dashboard-bottom">
+                <div class="kpi">
+                  <div class="label">Compliance (C)</div>
+                  <div class="value mono" id="kpiC">0%</div>
+                  <div class="desc">Requisitos, conformidade e controles essenciais do processamento.</div>
+                </div>
+                <div class="kpi">
+                  <div class="label">Performance (P)</div>
+                  <div class="value mono" id="kpiP">0%</div>
+                  <div class="desc">Fluxo operacional, produtividade, organização e desempenho.</div>
+                </div>
+                <div class="kpi">
+                  <div class="label">Inteligência (I)</div>
+                  <div class="value mono" id="kpiI">0%</div>
+                  <div class="desc">Gestão, tecnologia, análise e melhoria contínua.</div>
+                </div>
               </div>
             </div>
 
@@ -501,7 +528,7 @@
             </table>
 
             <div class="muted" style="margin-top:10px;font-size:12px;line-height:1.45">
-              Pontuação: Sim=100, Parcial=50, Não=0. Pesos: RDC15/2012=2, nãoRDC=1.
+              Pontuação: Sim=100, Parcial=60, Não=0. Pesos: RDC15/2012=2, nãoRDC=1, com ponderação por criticidade quando disponível.
             </div>
           </div>
 
