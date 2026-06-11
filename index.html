@@ -177,6 +177,7 @@
     .table{width:100%;border-collapse:collapse}
     .table th,.table td{border-bottom:1px solid var(--border);padding:10px 8px;text-align:left;font-size:14px;vertical-align:top}
     .table th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+    .table td.num,.table th.num{text-align:center;white-space:nowrap}
     .hr{height:1px;background:var(--border);margin:12px 0}
     .hidden{display:none!important}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
@@ -506,7 +507,7 @@
               <thead>
                 <tr>
                   <th>Prioridade</th>
-                  <th>Qtd</th>
+                  <th class="num">Qtd</th>
                   <th>Regra</th>
                 </tr>
               </thead>
@@ -520,8 +521,11 @@
               <thead>
                 <tr>
                   <th>Módulo</th>
-                  <th>Respondidas</th>
-                  <th>Pontos</th>
+                  <th class="num">Respondidas</th>
+                  <th class="num">Sim</th>
+                  <th class="num">Parcial</th>
+                  <th class="num">Não</th>
+                  <th class="num">Pontos</th>
                 </tr>
               </thead>
               <tbody id="modulesScoreBody"></tbody>
