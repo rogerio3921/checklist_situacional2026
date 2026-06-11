@@ -1,7 +1,7 @@
 /* NS CheckList Situacional CME — MVP Offline
    Versão atualizada
    Mantém:
-   - pontuação existente
+   - pontuação existente como base
    - dashboard
    - export TXT
    - impressão das perguntas
@@ -14,18 +14,18 @@
    - relatório completo em nova janela
    - índice parcial no dashboard e relatórios
    - descrição explicativa de índice parcial, índice global e camadas
-   Remove dos relatórios:
-   - anexo detalhado / listagem completa de perguntas
-   Não exibe no questionário:
-   - observação
-   - criticidade editável
-   - orientação técnica
+   - explicação da fórmula de pontuação na legenda
+   Ajusta:
+   - Parcial = 60
+   - peso por criticidade
+   - ordenação dos relatórios conforme a sequência do questionário
+   - tabela "Pontuação por módulo" com colunas Sim / Parcial / Não
 */
 
 const STORAGE_KEYS = {
   institution: "cme_mvp_institution_v3",
-  answers: "cme_mvp_answers_v6",
-  ui: "cme_mvp_ui_v4",
+  answers: "cme_mvp_answers_v7",
+  ui: "cme_mvp_ui_v5",
   customQuestions: "cme_mvp_custom_questions_v1"
 };
 
@@ -85,7 +85,20 @@ const CATEGORY_LEGEND = {
       range: "< 60%",
       description: "Fragilidade relevante, exigindo ação prioritária para reduzir riscos operacionais, regulatórios e assistenciais."
     }
-  ]
+  ],
+  scoring: {
+    title: "Como a pontuação é calculada",
+    items: [
+      "Sim = 100 pontos",
+      "Parcial = 60 pontos",
+      "Não = 0 ponto",
+      "Perguntas classificadas como RDC15/2012 recebem peso regulatório maior",
+      "Perguntas nãoRDC recebem peso regulatório padrão",
+      "A criticidade também influencia o peso final da pergunta",
+      "Peso por criticidade: Baixa = 1, Média = 1.5, Alta = 2, Crítica = 3",
+      "O resultado final é calculado por média ponderada das respostas"
+    ]
+  }
 };
 
 const INDEX_DESCRIPTIONS = {
@@ -103,8 +116,6 @@ function safeJSONParse(raw, fallback) {
 function cloneDeep(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
-
-/* ---------- Questions source ---------- */
 
 const baseQuestions = cloneDeep(questions);
 let activeQuestions = loadQuestions();
@@ -195,7 +206,7 @@ function nextQuestionId() {
 
 function answerToPoints(a) {
   if (a === "sim") return 100;
-  if (a === "parcial") return 50;
+  if (a === "parcial") return 60;
   if (a === "nao") return 0;
   return null;
 }
@@ -212,12 +223,21 @@ function layerLabel(layer) {
 }
 
 function normaMultiplier(q) {
-  return (q.norma === "RDC15/2012") ? 2 : 1;
+  return q.norma === "RDC15/2012" ? 2 : 1;
+}
+
+function criticalityMultiplier(q) {
+  return ({
+    "Baixa": 1,
+    "Média": 1.5,
+    "Alta": 2,
+    "Crítica": 3
+  }[q.criticality]) || 1;
 }
 
 function questionFinalWeight(q) {
   const base = (typeof q.weight === "number" && !Number.isNaN(q.weight)) ? q.weight : 1;
-  return base * normaMultiplier(q);
+  return base * normaMultiplier(q) * criticalityMultiplier(q);
 }
 
 function sanitizeFileName(s) {
@@ -246,7 +266,22 @@ function getCategoryDescription(code) {
   return "";
 }
 
-/* ---------- Metrics ---------- */
+function getQuestionOrderMap() {
+  const map = new Map();
+  getQuestions().forEach((q, index) => {
+    map.set(Number(q.id), index);
+  });
+  return map;
+}
+
+function sortByQuestionSequence(items) {
+  const orderMap = getQuestionOrderMap();
+  return [...items].sort((a, b) => {
+    const ia = orderMap.has(Number(a.id)) ? orderMap.get(Number(a.id)) : Number.MAX_SAFE_INTEGER;
+    const ib = orderMap.has(Number(b.id)) ? orderMap.get(Number(b.id)) : Number.MAX_SAFE_INTEGER;
+    return ia - ib;
+  });
+}
 
 function computeStats(answersById) {
   const qs = getQuestions();
@@ -346,7 +381,12 @@ function getModuleQuestions(moduleName) {
 
 function computeModuleScore(moduleName, answersById) {
   const qs = getModuleQuestions(moduleName);
-  let answered = 0, sum = 0, max = 0;
+  let answered = 0;
+  let sum = 0;
+  let max = 0;
+  let sim = 0;
+  let parcial = 0;
+  let nao = 0;
 
   for (const q of qs) {
     const a = answersById[q.id]?.value;
@@ -354,13 +394,17 @@ function computeModuleScore(moduleName, answersById) {
     if (pts === null) continue;
 
     answered++;
+    if (a === "sim") sim++;
+    else if (a === "parcial") parcial++;
+    else if (a === "nao") nao++;
+
     const w = questionFinalWeight(q);
     sum += pts * w;
     max += 100 * w;
   }
 
   const pct = max ? Math.round((sum / max) * 100) : 0;
-  return { total: qs.length, answered, pct };
+  return { total: qs.length, answered, sim, parcial, nao, pct };
 }
 
 function computePriorityMatrix(answersById) {
@@ -373,8 +417,6 @@ function computePriorityMatrix(answersById) {
   }
   return m;
 }
-
-/* ---------- State ---------- */
 
 const state = {
   institution: safeJSONParse(localStorage.getItem(STORAGE_KEYS.institution), null),
@@ -418,8 +460,6 @@ function removeAnswersForDeletedQuestions() {
   }
   persist();
 }
-
-/* ---------- UI refs ---------- */
 
 const el = {
   screenSetup: document.getElementById("screenSetup"),
@@ -490,8 +530,6 @@ const el = {
   btnSaveQuestion: document.getElementById("btnSaveQuestion"),
   btnCancelQuestionEdit: document.getElementById("btnCancelQuestionEdit")
 };
-
-/* ---------- Legend modal ---------- */
 
 function ensureLegendModal() {
   let modal = document.getElementById("legendModal");
@@ -609,10 +647,14 @@ function ensureLegendModal() {
     </div>
   `).join("");
 
+  const scoringHtml = CATEGORY_LEGEND.scoring.items.map(item => `
+    <li style="margin-bottom:6px;color:#4b5568;line-height:1.5">${escapeHtml(item)}</li>
+  `).join("");
+
   modal.innerHTML = `
     <div class="modal-box" style="
-      width:min(680px, 92vw);
-      max-height:78vh;
+      width:min(760px, 94vw);
+      max-height:82vh;
       overflow:hidden;
       display:flex;
       flex-direction:column;
@@ -702,6 +744,25 @@ function ensureLegendModal() {
             ${scoreRangesHtml}
           </div>
         </section>
+
+        <section style="margin-top:18px">
+          <div style="
+            font-size:14px;
+            font-weight:900;
+            color:#2b3560;
+            margin-bottom:10px;
+            padding-bottom:6px;
+            border-bottom:1px solid #e8eaf6;
+          ">
+            ${escapeHtml(CATEGORY_LEGEND.scoring.title)}
+          </div>
+          <div style="font-size:13px;line-height:1.6;color:#5d667b;margin-bottom:10px;">
+            Os resultados do questionário, módulos, camadas e índices são calculados com base em média ponderada das respostas.
+          </div>
+          <ul style="padding-left:20px;margin:0">
+            ${scoringHtml}
+          </ul>
+        </section>
       </div>
     </div>
   `;
@@ -747,7 +808,7 @@ function renderModuleLegendButton() {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
           <div style="font-size:14px;font-weight:800;color:#111827">Legenda das categorias</div>
-          <div style="font-size:13px;color:#6b7280;margin-top:2px">Consulte o significado das camadas, categorias e faixas de classificação.</div>
+          <div style="font-size:13px;color:#6b7280;margin-top:2px">Consulte o significado das camadas, categorias, faixas e cálculo da pontuação.</div>
         </div>
         <button id="btnOpenLegendModal" type="button" class="btn btn-secondary">Ver legenda completa</button>
       </div>
@@ -759,8 +820,6 @@ function renderModuleLegendButton() {
     btn.addEventListener("click", openLegendModal);
   }
 }
-
-/* ---------- Shared report helpers ---------- */
 
 function buildUnifiedPanoramaHtml(data) {
   return `
@@ -815,7 +874,6 @@ function getUnifiedReportStyles() {
     .grid.one{grid-template-columns:1fr}
     .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
     .grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .grid.five{grid-template-columns:repeat(5,minmax(0,1fr))}
     .grid.six{grid-template-columns:repeat(3,minmax(0,1fr))}
     .info-card,.kpi-card,.priority-card,.analysis-card,.summary-card,.action-card{border:1px solid #e8ecf5;border-radius:14px;padding:14px;background:#fbfcff}
     .label,.kpi-label{font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.03em}
@@ -852,11 +910,9 @@ function getUnifiedReportStyles() {
     .summary-card h3,.action-card h3{margin:0 0 8px 0;font-size:15px;color:#24324a}
     .action-card ul{margin-top:8px}
     @media print{body{background:#fff}.page{max-width:none;padding:0}.header{box-shadow:none}.section{box-shadow:none;break-inside:avoid}.actions{display:none}}
-    @media(max-width:1000px){.grid.five,.grid.two,.grid.three,.grid.six,.plan-grid{grid-template-columns:1fr}}
+    @media(max-width:1000px){.grid.two,.grid.three,.grid.six,.plan-grid{grid-template-columns:1fr}}
   `;
 }
-
-/* ---------- Basic report ---------- */
 
 function ensureBasicReportButton() {
   if (document.getElementById("btnBasicReport")) return;
@@ -896,6 +952,9 @@ function getBasicReportData() {
       module: moduleName,
       answered: ms.answered,
       total: ms.total,
+      sim: ms.sim,
+      parcial: ms.parcial,
+      nao: ms.nao,
       pct: ms.pct
     };
   });
@@ -988,6 +1047,9 @@ function openBasicReportWindow() {
     <tr>
       <td>${escapeHtml(item.module)}</td>
       <td>${item.answered}/${item.total}</td>
+      <td>${item.sim}</td>
+      <td>${item.parcial}</td>
+      <td>${item.nao}</td>
       <td><strong>${item.pct}%</strong></td>
     </tr>
   `).join("");
@@ -1027,12 +1089,15 @@ function openBasicReportWindow() {
 
           <section class="section">
             <h2>4. Desempenho por Módulo</h2>
-            <div class="muted">Pontuação calculada com ponderação por norma e respostas registradas.</div>
+            <div class="muted">Pontuação calculada com ponderação por resposta, peso regulatório e criticidade.</div>
             <table>
               <thead>
                 <tr>
                   <th>Módulo</th>
                   <th>Respondidas</th>
+                  <th>Sim</th>
+                  <th>Parcial</th>
+                  <th>Não</th>
                   <th>Pontuação</th>
                 </tr>
               </thead>
@@ -1057,8 +1122,6 @@ function openBasicReportWindow() {
   win.document.close();
   win.focus();
 }
-
-/* ---------- Complete report ---------- */
 
 function ensureCompleteReportButton() {
   if (document.getElementById("btnCompleteReport")) return;
@@ -1115,18 +1178,8 @@ function classifyReportScore(score) {
   };
 }
 
-function criticalityRank(value) {
-  return ({
-    "Crítica": 4,
-    "Alta": 3,
-    "Média": 2,
-    "Baixa": 1
-  }[value]) || 0;
-}
-
 function interpretLayerScore(layer, score) {
   const cls = classifyReportScore(score);
-
   const focus = {
     C: "conformidade regulatória, registros, rastreabilidade, requisitos essenciais e controles mínimos do processamento",
     P: "desempenho operacional, produtividade, fluxo, organização, perdas, consumo e indicadores",
@@ -1170,23 +1223,15 @@ function getCompleteResponseRows() {
 }
 
 function getPriorityFindings(responses) {
-  return responses
-    .filter(item => item.rawAnswer === "nao")
-    .sort((a, b) => {
-      const byCrit = criticalityRank(b.criticality) - criticalityRank(a.criticality);
-      if (byCrit !== 0) return byCrit;
-      return String(a.module).localeCompare(String(b.module), "pt-BR");
-    });
+  return sortByQuestionSequence(
+    responses.filter(item => item.rawAnswer === "nao")
+  );
 }
 
 function getAttentionFindings(responses) {
-  return responses
-    .filter(item => item.rawAnswer === "parcial")
-    .sort((a, b) => {
-      const byCrit = criticalityRank(b.criticality) - criticalityRank(a.criticality);
-      if (byCrit !== 0) return byCrit;
-      return String(a.module).localeCompare(String(b.module), "pt-BR");
-    });
+  return sortByQuestionSequence(
+    responses.filter(item => item.rawAnswer === "parcial")
+  );
 }
 
 function buildFallbackActionText(item, mode = "nao") {
@@ -1239,7 +1284,7 @@ function buildFallbackActionText(item, mode = "nao") {
 }
 
 function getDetailedActionBlocks(items, mode = "nao") {
-  return items.map(item => {
+  const blocks = items.map(item => {
     const g = mode === "parcial"
       ? (item.guidanceParcial || normalizeGuidanceNode(null))
       : (item.guidanceNao || normalizeGuidanceNode(null));
@@ -1257,6 +1302,8 @@ function getDetailedActionBlocks(items, mode = "nao") {
       actions
     };
   });
+
+  return sortByQuestionSequence(blocks);
 }
 
 function getCompleteReportData() {
@@ -1271,6 +1318,9 @@ function getCompleteReportData() {
       module: moduleName,
       answered: ms.answered,
       total: ms.total,
+      sim: ms.sim,
+      parcial: ms.parcial,
+      nao: ms.nao,
       pct: ms.pct,
       classification: cls.label,
       tone: cls.tone,
@@ -1280,7 +1330,7 @@ function getCompleteReportData() {
 
   const priorityFindings = getPriorityFindings(responses);
   const attentionFindings = getAttentionFindings(responses);
-  const unanswered = responses.filter(item => !item.rawAnswer);
+  const unanswered = sortByQuestionSequence(responses.filter(item => !item.rawAnswer));
 
   return {
     ...basic,
@@ -1337,37 +1387,14 @@ function buildCompleteRecommendations(data) {
   const hasP5 = mergedFindings.some(i => i.category === "P5");
   const hasI2 = mergedFindings.some(i => i.category === "I2" || i.layer === "I");
 
-  if (hasRDC15) {
-    recommendations.push("Priorizar a correção dos itens relacionados à RDC15/2012, especialmente aqueles classificados como Alta ou Crítica, por representarem maior risco regulatório e assistencial.");
-  }
-
-  if (hasC3) {
-    recommendations.push("Revisar os fluxos de rastreabilidade, garantindo identificação clara de materiais, cargas, processos, profissionais envolvidos e destino final.");
-  }
-
-  if (hasC4) {
-    recommendations.push("Fortalecer registros e evidências documentais, reduzindo lacunas de preenchimento, ausência de dados e fragilidade para auditorias.");
-  }
-
-  if (hasC5) {
-    recommendations.push("Reavaliar processos de qualificação, validação e monitoramento técnico, especialmente em etapas críticas como limpeza, esterilização, água e equipamentos.");
-  }
-
-  if (hasC6) {
-    recommendations.push("Estruturar plano formal de tratativa de não conformidades, com registro, análise de causa, ação corretiva, responsável e prazo.");
-  }
-
-  if (hasP1) {
-    recommendations.push("Avaliar dimensionamento, capacitação e distribuição da equipe, considerando volume processado, complexidade dos materiais e carga operacional da CME.");
-  }
-
-  if (hasP5) {
-    recommendations.push("Implantar ou fortalecer indicadores de desempenho para monitorar produtividade, retrabalho, atrasos, falhas e eficiência operacional.");
-  }
-
-  if (hasI2 || data.indices.I < 60) {
-    recommendations.push("Evoluir a camada de tecnologia, integração e análise de dados, reduzindo dependência de controles manuais e ampliando a capacidade de decisão da gestão.");
-  }
+  if (hasRDC15) recommendations.push("Priorizar a correção dos itens relacionados à RDC15/2012, especialmente aqueles classificados como Alta ou Crítica, por representarem maior risco regulatório e assistencial.");
+  if (hasC3) recommendations.push("Revisar os fluxos de rastreabilidade, garantindo identificação clara de materiais, cargas, processos, profissionais envolvidos e destino final.");
+  if (hasC4) recommendations.push("Fortalecer registros e evidências documentais, reduzindo lacunas de preenchimento, ausência de dados e fragilidade para auditorias.");
+  if (hasC5) recommendations.push("Reavaliar processos de qualificação, validação e monitoramento técnico, especialmente em etapas críticas como limpeza, esterilização, água e equipamentos.");
+  if (hasC6) recommendations.push("Estruturar plano formal de tratativa de não conformidades, com registro, análise de causa, ação corretiva, responsável e prazo.");
+  if (hasP1) recommendations.push("Avaliar dimensionamento, capacitação e distribuição da equipe, considerando volume processado, complexidade dos materiais e carga operacional da CME.");
+  if (hasP5) recommendations.push("Implantar ou fortalecer indicadores de desempenho para monitorar produtividade, retrabalho, atrasos, falhas e eficiência operacional.");
+  if (hasI2 || data.indices.I < 60) recommendations.push("Evoluir a camada de tecnologia, integração e análise de dados, reduzindo dependência de controles manuais e ampliando a capacidade de decisão da gestão.");
 
   if (!recommendations.length) {
     recommendations.push("Manter o monitoramento periódico dos processos, revisando indicadores, registros e aderência às boas práticas de CME.");
@@ -1395,17 +1422,9 @@ function buildSuggestedActionPlan(data) {
     "Manter plano de melhoria contínua com responsáveis, prazos e evidências."
   ];
 
-  if (data.indices.I < 60) {
-    mediumTerm.push("Estruturar plano de evolução tecnológica, integração de dados e automação dos registros da CME.");
-  }
-
-  if (data.indices.P < 60) {
-    mediumTerm.push("Revisar produtividade, fluxo de trabalho, dimensionamento e gargalos operacionais.");
-  }
-
-  if (data.indices.C < 60) {
-    shortTerm.push("Priorizar adequações de conformidade regulatória e segurança do processamento.");
-  }
+  if (data.indices.I < 60) mediumTerm.push("Estruturar plano de evolução tecnológica, integração de dados e automação dos registros da CME.");
+  if (data.indices.P < 60) mediumTerm.push("Revisar produtividade, fluxo de trabalho, dimensionamento e gargalos operacionais.");
+  if (data.indices.C < 60) shortTerm.push("Priorizar adequações de conformidade regulatória e segurança do processamento.");
 
   return { shortTerm, mediumTerm, continuous };
 }
@@ -1492,6 +1511,9 @@ function openCompleteReportWindow() {
     <tr>
       <td>${escapeHtml(item.module)}</td>
       <td>${item.answered}/${item.total}</td>
+      <td>${item.sim}</td>
+      <td>${item.parcial}</td>
+      <td>${item.nao}</td>
       <td><strong>${item.pct}%</strong></td>
       <td><span class="status ${item.tone}">${escapeHtml(item.classification)}</span></td>
       <td>${escapeHtml(item.interpretation)}</td>
@@ -1540,6 +1562,9 @@ function openCompleteReportWindow() {
                 <tr>
                   <th>Módulo</th>
                   <th>Respondidas</th>
+                  <th>Sim</th>
+                  <th>Parcial</th>
+                  <th>Não</th>
                   <th>Score</th>
                   <th>Classificação</th>
                   <th>Leitura interpretativa</th>
@@ -1551,7 +1576,7 @@ function openCompleteReportWindow() {
 
           <section class="section">
             <h2>6. Achados prioritários</h2>
-            <div class="muted">Perguntas com resposta “Não”, ordenadas por criticidade e módulo.</div>
+            <div class="muted">Perguntas com resposta “Não”, apresentadas na mesma sequência do questionário.</div>
             <table>
               <thead>
                 <tr>
@@ -1570,13 +1595,13 @@ function openCompleteReportWindow() {
 
           <section class="section">
             <h2>6.1. Ações necessárias para os achados prioritários</h2>
-            <div class="muted">Orientações acionáveis para tratamento dos itens com resposta “Não”.</div>
+            <div class="muted">Orientações acionáveis para tratamento dos itens com resposta “Não”, seguindo a ordem do questionário.</div>
             ${renderActionCards(data.priorityActions, "Não há ações prioritárias pendentes no momento.", "Ações necessárias")}
           </section>
 
           <section class="section">
             <h2>7. Pontos de atenção</h2>
-            <div class="muted">Perguntas com resposta “Parcial”, representando aderência incompleta ou oportunidade de melhoria.</div>
+            <div class="muted">Perguntas com resposta “Parcial”, apresentadas na mesma sequência do questionário.</div>
             <table>
               <thead>
                 <tr>
@@ -1595,7 +1620,7 @@ function openCompleteReportWindow() {
 
           <section class="section">
             <h2>7.1. Ações recomendadas para os pontos de atenção</h2>
-            <div class="muted">Orientações para consolidar os itens com resposta “Parcial” e elevar sua aderência.</div>
+            <div class="muted">Orientações para consolidar os itens com resposta “Parcial”, seguindo a ordem do questionário.</div>
             ${renderActionCards(data.attentionActions, "Não há ações recomendadas pendentes para os pontos de atenção no momento.", "Ações recomendadas")}
           </section>
 
@@ -1630,8 +1655,6 @@ function openCompleteReportWindow() {
   win.document.close();
   win.focus();
 }
-
-/* ---------- App screens ---------- */
 
 function showSetup(prefill = true) {
   el.screenSetup.classList.remove("hidden");
@@ -1741,8 +1764,6 @@ function renderModules() {
   }
 }
 
-/* ---------- Answers ---------- */
-
 function ensureAnswerRecord(id) {
   if (!state.answersById[id] || typeof state.answersById[id] !== "object") {
     state.answersById[id] = {
@@ -1771,8 +1792,6 @@ function clearModuleAnswers(moduleName) {
   }
   persist();
 }
-
-/* ---------- Question UI ---------- */
 
 function renderQuestionItem(q, idx, total) {
   const wrap = document.createElement("div");
@@ -1873,8 +1892,6 @@ function openModule(moduleName) {
   el.moduleQuestionsList.scrollIntoView({ behavior: "instant", block: "start" });
 }
 
-/* ---------- Dashboard ---------- */
-
 function showDashboard() {
   showDashboardView();
   el.rightTitle.textContent = "Dashboard";
@@ -1891,9 +1908,9 @@ function showDashboard() {
 
   const pm = computePriorityMatrix(state.answersById);
   el.priorityTableBody.innerHTML = `
-    <tr><td><b>P1 — CRÍTICO</b></td><td class="mono">${pm.P1.length}</td><td>Resposta = Não</td></tr>
-    <tr><td><b>P2 — ALTO</b></td><td class="mono">${pm.P2.length}</td><td>Resposta = Parcial</td></tr>
-    <tr><td><b>P3 — OK</b></td><td class="mono">${pm.P3.length}</td><td>Resposta = Sim</td></tr>
+    <tr><td><b>P1 — CRÍTICO</b></td><td class="mono" style="text-align:center">${pm.P1.length}</td><td>Resposta = Não</td></tr>
+    <tr><td><b>P2 — ALTO</b></td><td class="mono" style="text-align:center">${pm.P2.length}</td><td>Resposta = Parcial</td></tr>
+    <tr><td><b>P3 — OK</b></td><td class="mono" style="text-align:center">${pm.P3.length}</td><td>Resposta = Sim</td></tr>
   `;
 
   const modules = getAllModules();
@@ -1903,8 +1920,11 @@ function showDashboard() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${m}</td>
-      <td class="mono">${ms.answered}/${ms.total}</td>
-      <td class="mono"><b>${ms.pct}%</b></td>
+      <td class="mono" style="text-align:center">${ms.answered}/${ms.total}</td>
+      <td class="mono" style="text-align:center">${ms.sim}</td>
+      <td class="mono" style="text-align:center">${ms.parcial}</td>
+      <td class="mono" style="text-align:center">${ms.nao}</td>
+      <td class="mono" style="text-align:center"><b>${ms.pct}%</b></td>
     `;
     el.modulesScoreBody.appendChild(tr);
   }
@@ -1912,8 +1932,6 @@ function showDashboard() {
   ensureBasicReportButton();
   ensureCompleteReportButton();
 }
-
-/* ---------- Export TXT ---------- */
 
 function exportTxt() {
   const inst = state.institution || {};
@@ -1925,7 +1943,7 @@ function exportTxt() {
   const lines = [];
   lines.push("=".repeat(80));
   lines.push("NS CHECKLIST SITUACIONAL CME — RELATÓRIO (MVP OFFLINE)");
-  lines.push("Pontuação ponderada: RDC15/2012 peso 2 • nãoRDC peso 1 • Sim=100 Parcial=50 Não=0");
+  lines.push("Pontuação ponderada: RDC15/2012 peso 2 • nãoRDC peso 1 • criticidade ponderada • Sim=100 Parcial=60 Não=0");
   lines.push("=".repeat(80));
   lines.push("");
 
@@ -1959,6 +1977,14 @@ function exportTxt() {
   lines.push(`P3 (Sim): ${pm.P3.length}`);
   lines.push("");
 
+  lines.push("PONTUAÇÃO POR MÓDULO");
+  lines.push("-".repeat(80));
+  for (const moduleName of getAllModules()) {
+    const ms = computeModuleScore(moduleName, state.answersById);
+    lines.push(`${moduleName}: Respondidas ${ms.answered}/${ms.total} | Sim ${ms.sim} | Parcial ${ms.parcial} | Não ${ms.nao} | Pontos ${ms.pct}%`);
+  }
+  lines.push("");
+
   lines.push("RESPOSTAS (DETALHADAS)");
   lines.push("-".repeat(80));
 
@@ -1986,8 +2012,6 @@ function exportTxt() {
   a.click();
   document.body.removeChild(a);
 }
-
-/* ---------- Print questions ---------- */
 
 function printQuestionsList() {
   const qs = getQuestions();
@@ -2031,7 +2055,7 @@ function printQuestionsList() {
               <th>Submódulo</th>
               <th>Camada</th>
               <th>Categoria</th>
-              <th>Peso</th>
+              <th>Peso base</th>
               <th>Norma</th>
               <th>Criticidade sugerida</th>
             </tr>
@@ -2055,8 +2079,6 @@ function printQuestionsList() {
     win.print();
   }, 300);
 }
-
-/* ---------- Questions manager ---------- */
 
 function openQuestionsManager() {
   populateManagerFilters();
@@ -2123,7 +2145,7 @@ function renderQuestionsManagerList() {
         <span class="pill">${escapeHtml(q.submodule || "")}</span>
         <span class="pill">${escapeHtml(q.layer)} — ${escapeHtml(layerLabel(q.layer))}</span>
         <span class="pill">Categoria: ${escapeHtml(q.category)} — ${escapeHtml(getCategoryDescription(q.category) || "")}</span>
-        <span class="pill">Peso: ${escapeHtml(String(q.weight))}</span>
+        <span class="pill">Peso base: ${escapeHtml(String(q.weight))}</span>
         <span class="pill ${q.norma === "RDC15/2012" ? "pill-rdc" : "pill-nrdc"}">${escapeHtml(q.norma || "nãoRDC")}</span>
         <span class="pill">Criticidade: ${escapeHtml(q.criticality || "—")}</span>
       </div>
@@ -2281,8 +2303,6 @@ function renderAllAfterQuestionsChange(preferredModule = null) {
 
   persist();
 }
-
-/* ---------- Wiring ---------- */
 
 function wire() {
   el.formInstitution.addEventListener("submit", (e) => {
@@ -2454,8 +2474,6 @@ function wire() {
     }
   });
 }
-
-/* ---------- Init ---------- */
 
 function init() {
   removeAnswersForDeletedQuestions();
