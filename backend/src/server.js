@@ -8,9 +8,24 @@ const { initializeDatabase, saveAssessment, getAllAssessments, getAssessmentById
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
+
+function normalizeAllowedOrigin(value) {
+  const trimmed = String(value || "").trim();
+
+  if (!trimmed || trimmed === "*") {
+    return trimmed;
+  }
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return trimmed.replace(/\/$/, "");
+  }
+}
+
 const allowedOrigins = String(process.env.ALLOWED_ORIGINS || "*")
   .split(",")
-  .map((value) => value.trim())
+  .map((value) => normalizeAllowedOrigin(value))
   .filter(Boolean);
 
 app.use(cors({

@@ -56,11 +56,11 @@ O blueprint ja define:
 
 Se preferir criar sem blueprint, use os mesmos campos abaixo.
 
-Defina ALLOWED_ORIGINS com a URL final do GitHub Pages.
+Defina ALLOWED_ORIGINS com a origin do frontend publicado, sem o caminho final da aplicacao.
 
 Exemplo:
 
-ALLOWED_ORIGINS=https://rogerio3921.github.io/checklist_situacional2026
+ALLOWED_ORIGINS=https://rogerio3921.github.io
 
 Para DB_PATH, use:
 

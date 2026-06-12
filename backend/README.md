@@ -43,7 +43,7 @@ Pontos importantes no Render:
 
 Variaveis principais:
 
-- `ALLOWED_ORIGINS`: URL do frontend publicado no GitHub Pages
+- `ALLOWED_ORIGINS`: origin do frontend publicado no GitHub Pages
 - `DB_PATH`: `/opt/render/project/src/backend/data/cme_checklist.db`
 
 ## Exemplo rapido de calculo
