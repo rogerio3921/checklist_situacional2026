@@ -8,7 +8,7 @@ As regras de calculo foram espelhadas em `../shared/scoring.js`.
 - API minima com Express
 - Endpoint de health
 - Endpoint para calcular resultado com as mesmas regras atuais
-- Endpoint para salvar avaliacao em memoria (temporario)
+- Endpoint para salvar avaliacao em SQLite
 - Esquema SQL inicial em `db/schema.sql`
 
 ## Rotas
@@ -29,6 +29,23 @@ npm run dev
 
 API em: `http://localhost:3001`
 
+## Publicar no Render
+
+O repositorio possui o arquivo [render.yaml](../render.yaml) com a configuracao inicial do servico.
+
+Pontos importantes no Render:
+
+- Root Directory: `backend`
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Health Check Path: `/api/v1/health`
+- Disk persistente montado para o SQLite
+
+Variaveis principais:
+
+- `ALLOWED_ORIGINS`: URL do frontend publicado no GitHub Pages
+- `DB_PATH`: `/opt/render/project/src/backend/data/cme_checklist.db`
+
 ## Exemplo rapido de calculo
 
 `POST /api/v1/calculate`
@@ -48,5 +65,4 @@ API em: `http://localhost:3001`
 
 ## Observacao
 
-A persistencia em `assessmentsStore` e somente para Fase 1.
-Na Fase 2 vamos ligar banco real e integrar o frontend para salvar online.
+Nesta fase, a persistencia usa SQLite. Para piloto funciona bem, mas para escala maior o proximo passo recomendado e migrar para PostgreSQL.

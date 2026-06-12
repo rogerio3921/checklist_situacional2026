@@ -16,6 +16,8 @@ Permitir que o usuario acesse o checklist por link externo, preencha a avaliacao
 
 Pasta: backend
 
+Se quiser evitar configuracao manual repetitiva, o repositorio agora inclui o blueprint [render.yaml](render.yaml).
+
 ### Variaveis de ambiente
 
 Use como base o arquivo [backend/.env.example](backend/.env.example).
@@ -32,12 +34,37 @@ Variaveis:
 - Build Command: npm install
 - Start Command: npm start
 - Environment: Node
+- Health Check Path: /api/v1/health
+
+### Opcao A - Criar pelo blueprint render.yaml
+
+1. No Render, clique em New +.
+2. Escolha Blueprint.
+3. Conecte este repositorio.
+4. O Render vai ler [render.yaml](render.yaml) automaticamente.
+5. Preencha apenas a variavel ALLOWED_ORIGINS com a URL final do GitHub Pages.
+
+O blueprint ja define:
+
+- servico web Node
+- rootDir como backend
+- health check
+- disco persistente para SQLite
+- caminho do banco em DB_PATH
+
+### Opcao B - Criar manualmente
+
+Se preferir criar sem blueprint, use os mesmos campos abaixo.
 
 Defina ALLOWED_ORIGINS com a URL final do GitHub Pages.
 
 Exemplo:
 
 ALLOWED_ORIGINS=https://rogerio3921.github.io/checklist_situacional2026
+
+Para DB_PATH, use:
+
+DB_PATH=/opt/render/project/src/backend/data/cme_checklist.db
 
 Observacao: se for manter SQLite em producao de piloto, use disco persistente no Render. Sem isso, os dados podem ser perdidos em reinicios.
 
@@ -89,6 +116,8 @@ A URL esperada sera semelhante a:
 https://rogerio3921.github.io/checklist_situacional2026
 
 ## 3. Teste minimo de ponta a ponta
+
+Antes do teste, atualize [config.js](config.js) com a URL publica do backend no Render e faca novo push para o GitHub.
 
 1. Abrir o link publico do frontend.
 2. Preencher identificacao da instituicao.
