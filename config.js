@@ -1,3 +1,3 @@
 window.CME_CONFIG = {
-  apiBase: ""
+  apiBase: "https://checklist-situacional-cme-api.onrender.com/api/v1"
 };
