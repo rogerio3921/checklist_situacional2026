@@ -88,10 +88,11 @@ const APP_CONFIG = window.CME_CONFIG && typeof window.CME_CONFIG === "object"
   ? window.CME_CONFIG
   : {};
 const IS_LOCAL_HOST = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const ONLINE_FEATURE_FLAG = APP_CONFIG.enableOnline === true;
 const ONLINE_API_BASE = String(
   APP_CONFIG.apiBase || window.CME_API_BASE || (IS_LOCAL_HOST ? "http://localhost:3001/api/v1" : "")
 ).trim().replace(/\/$/, "");
-const ONLINE_FEATURES_ENABLED = Boolean(ONLINE_API_BASE);
+const ONLINE_FEATURES_ENABLED = ONLINE_FEATURE_FLAG && Boolean(ONLINE_API_BASE);
 
 function safeJSONParse(raw, fallback) {
   try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
@@ -1919,7 +1920,7 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
   if (!el.onlineSyncStatus) return;
 
   if (!ONLINE_FEATURES_ENABLED) {
-    el.onlineSyncStatus.textContent = "Online: desabilitado nesta configuracao.";
+    el.onlineSyncStatus.textContent = "Fluxo atual: preenchimento local com geração de relatório no navegador.";
     el.onlineSyncStatus.style.color = "";
     return;
   }
@@ -2619,12 +2620,14 @@ function wire() {
 function setupOnlineControls() {
   if (el.btnSaveOnline) {
     el.btnSaveOnline.disabled = !ONLINE_FEATURES_ENABLED;
-    el.btnSaveOnline.title = ONLINE_FEATURES_ENABLED ? "" : "Configure a URL da API para habilitar o modo online.";
+    el.btnSaveOnline.hidden = !ONLINE_FEATURES_ENABLED;
+    el.btnSaveOnline.title = ONLINE_FEATURES_ENABLED ? "" : "Sincronização online desativada nesta fase do produto.";
   }
 
   if (el.btnLoadOnline) {
     el.btnLoadOnline.disabled = !ONLINE_FEATURES_ENABLED;
-    el.btnLoadOnline.title = ONLINE_FEATURES_ENABLED ? "" : "Configure a URL da API para habilitar o modo online.";
+    el.btnLoadOnline.hidden = !ONLINE_FEATURES_ENABLED;
+    el.btnLoadOnline.title = ONLINE_FEATURES_ENABLED ? "" : "Sincronização online desativada nesta fase do produto.";
   }
 
   renderOnlineSyncStatus();

@@ -8,8 +8,8 @@ Aplicacao web para diagnostico situacional de CME, com preenchimento digital, da
 - [app.js](app.js): logica do frontend
 - [questions.js](questions.js): base de perguntas
 - [recommendations.js](recommendations.js): recomendacoes automaticas
-- [config.js](config.js): configuracao da URL da API
-- [backend/src/server.js](backend/src/server.js): API Node.js
+- [config.js](config.js): configuracao de recursos opcionais
+- [backend/src/server.js](backend/src/server.js): API Node.js opcional para fase futura
 
 ## Uso local
 
@@ -17,29 +17,28 @@ Frontend:
 
 1. Abra [index.html](index.html) no navegador.
 
-Backend:
+O fluxo principal atual e local:
 
-1. Entre na pasta backend.
-2. Rode npm.cmd install.
-3. Rode npm.cmd start.
-
-Em ambiente local, se [config.js](config.js) estiver vazio, o frontend usa automaticamente http://localhost:3001/api/v1.
+1. preencher a avaliacao no navegador
+2. visualizar dashboard e relatorios
+3. imprimir ou exportar o resultado
 
 ## Publicacao recomendada
 
 - frontend: GitHub Pages
-- backend: Render
+- backend: opcional, para fase futura
 
 Guia resumido em [DEPLOY_PHASE1.md](DEPLOY_PHASE1.md).
 
-## Configuracao da API publica
+## Configuracao do modo online
 
-Depois de publicar o backend, edite [config.js](config.js) assim:
+Nesta fase, o recomendado e manter o modo online desligado:
 
 window.CME_CONFIG = {
-	apiBase: "https://seu-backend.onrender.com/api/v1"
+	enableOnline: false,
+	apiBase: ""
 };
 
 ## Observacao importante
 
-Se [config.js](config.js) estiver sem URL publica, os botoes online ficam desabilitados fora do ambiente local.
+Os relatorios e o dashboard funcionam sem backend. A sincronizacao online pode ser reativada depois, quando houver necessidade de armazenamento centralizado.
