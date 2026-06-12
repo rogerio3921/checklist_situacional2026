@@ -8,8 +8,20 @@ const { initializeDatabase, saveAssessment, getAllAssessments, getAssessmentById
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
+const allowedOrigins = String(process.env.ALLOWED_ORIGINS || "*")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 
-app.use(cors());
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Origem nao permitida por CORS"));
+  }
+}));
 app.use(express.json({ limit: "2mb" }));
 
 function normalizeAnswersById(rawAnswersById) {
@@ -49,6 +61,15 @@ app.get("/api/v1/health", (_req, res) => {
     service: "cme-checklist-backend",
     phase: "fase-1",
     timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "cme-checklist-backend",
+    health: "/api/v1/health",
+    assessments: "/api/v1/assessments"
   });
 });
 
@@ -156,7 +177,8 @@ app.get("/api/v1/assessments", async (_req, res) => {
 app.listen(port, async () => {
   try {
     await initializeDatabase();
-    console.log(`API online em http://localhost:${port}`);
+    console.log(`API online na porta ${port}`);
+    console.log(`CORS permitido para: ${allowedOrigins.join(", ")}`);
   } catch (err) {
     console.error("Falha ao inicializar banco de dados:", err);
     process.exit(1);

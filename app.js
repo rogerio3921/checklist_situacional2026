@@ -84,7 +84,14 @@ const CATEGORY_LEGEND = {
   ]
 };
 
-const ONLINE_API_BASE = window.CME_API_BASE || "http://localhost:3001/api/v1";
+const APP_CONFIG = window.CME_CONFIG && typeof window.CME_CONFIG === "object"
+  ? window.CME_CONFIG
+  : {};
+const IS_LOCAL_HOST = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const ONLINE_API_BASE = String(
+  APP_CONFIG.apiBase || window.CME_API_BASE || (IS_LOCAL_HOST ? "http://localhost:3001/api/v1" : "")
+).trim().replace(/\/$/, "");
+const ONLINE_FEATURES_ENABLED = Boolean(ONLINE_API_BASE);
 
 function safeJSONParse(raw, fallback) {
   try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
@@ -1911,6 +1918,12 @@ function getOnlinePayload() {
 function renderOnlineSyncStatus(customText, tone = "muted") {
   if (!el.onlineSyncStatus) return;
 
+  if (!ONLINE_FEATURES_ENABLED) {
+    el.onlineSyncStatus.textContent = "Online: desabilitado nesta configuracao.";
+    el.onlineSyncStatus.style.color = "";
+    return;
+  }
+
   if (customText) {
     el.onlineSyncStatus.textContent = customText;
   } else if (state.ui.lastOnlineAssessmentId) {
@@ -1935,6 +1948,11 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
 }
 
 async function saveAssessmentOnline() {
+  if (!ONLINE_FEATURES_ENABLED) {
+    alert("Funcionalidade online desabilitada nesta configuracao do app.");
+    return;
+  }
+
   if (!state.institution) {
     alert("Preencha primeiro os dados da instituição para sincronizar online.");
     return;
@@ -1986,6 +2004,11 @@ function normalizeOnlineAnswers(rawAnswersById) {
 }
 
 async function loadLatestAssessmentOnline() {
+  if (!ONLINE_FEATURES_ENABLED) {
+    alert("Funcionalidade online desabilitada nesta configuracao do app.");
+    return;
+  }
+
   renderOnlineSyncStatus("Online: buscando última avaliação...", "warn");
 
   try {
@@ -2593,10 +2616,25 @@ function wire() {
 
 /* ---------- Init ---------- */
 
+function setupOnlineControls() {
+  if (el.btnSaveOnline) {
+    el.btnSaveOnline.disabled = !ONLINE_FEATURES_ENABLED;
+    el.btnSaveOnline.title = ONLINE_FEATURES_ENABLED ? "" : "Configure a URL da API para habilitar o modo online.";
+  }
+
+  if (el.btnLoadOnline) {
+    el.btnLoadOnline.disabled = !ONLINE_FEATURES_ENABLED;
+    el.btnLoadOnline.title = ONLINE_FEATURES_ENABLED ? "" : "Configure a URL da API para habilitar o modo online.";
+  }
+
+  renderOnlineSyncStatus();
+}
+
 function init() {
   removeAnswersForDeletedQuestions();
   ensureLegendModal();
   wire();
+  setupOnlineControls();
   if (state.institution) showApp();
   else showSetup(true);
 }
