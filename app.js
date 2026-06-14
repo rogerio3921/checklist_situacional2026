@@ -326,6 +326,25 @@ function computePriorityMatrix(answersById) {
   return m;
 }
 
+function computePartialIndex(answersById) {
+  let partialWeighted = 0;
+  let answeredWeighted = 0;
+
+  for (const q of getQuestions()) {
+    const a = answersById[q.id]?.value;
+    const w = questionFinalWeight(q);
+    if (!a) continue;
+
+    answeredWeighted += w;
+    if (a === "parcial") {
+      partialWeighted += w;
+    }
+  }
+
+  const pct = answeredWeighted > 0 ? Math.round((partialWeighted / answeredWeighted) * 100) : 0;
+  return { partialWeighted, answeredWeighted, pct };
+}
+
 /* ---------- State ---------- */
 
 const state = {
@@ -1878,10 +1897,10 @@ function showDashboard() {
   const idx = computeLayerIndices(state.answersById);
   const stats = computeStats(state.answersById);
   const pm = computePriorityMatrix(state.answersById);
-  const partialPct = stats.total > 0 ? Math.round((pm.P2.length / stats.total) * 100) : 0;
+  const partial = computePartialIndex(state.answersById);
 
   el.kpiGlobal.textContent = `${idx.Global}%`;
-  el.kpiPartial.textContent = `${pm.P2.length}/${stats.total} (${partialPct}%)`;
+  el.kpiPartial.textContent = `${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%)`;
   el.kpiC.textContent = `${idx.C}%`;
   el.kpiP.textContent = `${idx.P}%`;
   el.kpiI.textContent = `${idx.I}%`;
@@ -1925,10 +1944,8 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
   if (!el.onlineSyncStatus) return;
 
   if (!ONLINE_FEATURES_ENABLED) {
-    const pm = computePriorityMatrix(state.answersById);
-    const stats = computeStats(state.answersById);
-    const partialPct = stats.total > 0 ? Math.round((pm.P2.length / stats.total) * 100) : 0;
-    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice parcial: ${pm.P2.length}/${stats.total} (${partialPct}%).`;
+    const partial = computePartialIndex(state.answersById);
+    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice parcial ponderado: ${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%).`;
     el.onlineSyncStatus.style.color = "";
     return;
   }
