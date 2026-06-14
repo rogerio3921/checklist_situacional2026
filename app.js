@@ -299,6 +299,7 @@ function getModuleQuestions(moduleName) {
 function computeModuleScore(moduleName, answersById) {
   const qs = getModuleQuestions(moduleName);
   let answered = 0, sum = 0, max = 0;
+  let sim = 0, parcial = 0, nao = 0;
 
   for (const q of qs) {
     const a = answersById[q.id]?.value;
@@ -306,13 +307,16 @@ function computeModuleScore(moduleName, answersById) {
     if (pts === null) continue;
 
     answered++;
+    if (a === "sim") sim += 1;
+    if (a === "parcial") parcial += 1;
+    if (a === "nao") nao += 1;
     const w = questionFinalWeight(q);
     sum += pts * w;
     max += 100 * w;
   }
 
   const pct = max ? Math.round((sum / max) * 100) : 0;
-  return { total: qs.length, answered, pct };
+  return { total: qs.length, answered, pct, sim, parcial, nao };
 }
 
 function computePriorityMatrix(answersById) {
@@ -1922,6 +1926,9 @@ function showDashboard() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${m}</td>
+      <td class="mono">${ms.sim}</td>
+      <td class="mono">${ms.parcial}</td>
+      <td class="mono">${ms.nao}</td>
       <td class="mono">${ms.answered}/${ms.total}</td>
       <td class="mono"><b>${ms.pct}%</b></td>
     `;
