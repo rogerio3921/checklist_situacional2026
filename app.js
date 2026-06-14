@@ -1908,12 +1908,12 @@ function showDashboard() {
   const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
   const naoCountLabel = pm.P1.length === 1 ? "1 pergunta não" : `${pm.P1.length} perguntas não`;
 
-  el.kpiGlobal.textContent = simCountLabel;
-  el.kpiGlobalCoverage.textContent = `${partial.simQuestions}/${partial.totalQuestions} perguntas (${partial.simPct}%)`;
-  el.kpiPartialCount.textContent = partialCountLabel;
-  el.kpiPartialWeighted.textContent = `${partial.partialQuestions}/${partial.totalQuestions} perguntas (${partial.partialPct}%)`;
-  el.kpiNaoCount.textContent = naoCountLabel;
-  el.kpiNaoRate.textContent = `${partial.naoQuestions}/${partial.totalQuestions} perguntas (${partial.naoPct}%)`;
+  el.kpiGlobal.textContent = `${partial.simQuestions}`;
+  el.kpiGlobalCoverage.textContent = `${partial.simQuestions}/${partial.totalQuestions} (${partial.simPct}%)`;
+  el.kpiPartialCount.textContent = `${partial.partialQuestions}`;
+  el.kpiPartialWeighted.textContent = `${partial.partialQuestions}/${partial.totalQuestions} (${partial.partialPct}%)`;
+  el.kpiNaoCount.textContent = `${partial.naoQuestions}`;
+  el.kpiNaoRate.textContent = `${partial.naoQuestions}/${partial.totalQuestions} (${partial.naoPct}%)`;
   el.kpiC.textContent = `${idx.C}%`;
   el.kpiP.textContent = `${idx.P}%`;
   el.kpiI.textContent = `${idx.I}%`;
@@ -1963,7 +1963,7 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
     const simCountLabel = pm.P3.length === 1 ? "1 pergunta sim" : `${pm.P3.length} perguntas sim`;
     const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
     const naoCountLabel = pm.P1.length === 1 ? "1 pergunta não" : `${pm.P1.length} perguntas não`;
-    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice sim: ${simCountLabel} (${partial.simQuestions}/${partial.totalQuestions} = ${partial.simPct}%). Índice parcial: ${partialCountLabel} (${partial.partialQuestions}/${partial.totalQuestions} = ${partial.partialPct}%). Índice não conformidade: ${naoCountLabel} (${partial.naoQuestions}/${partial.totalQuestions} = ${partial.naoPct}%). Cobertura atual: ${stats.answered}/${stats.total} respondidas.`;
+    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice sim: ${partial.simQuestions}/${partial.totalQuestions} (${partial.simPct}%). Índice parcial: ${partial.partialQuestions}/${partial.totalQuestions} (${partial.partialPct}%). Índice não: ${partial.naoQuestions}/${partial.totalQuestions} (${partial.naoPct}%). Cobertura atual: ${stats.answered}/${stats.total} respondidas.`;
     el.onlineSyncStatus.style.color = "";
     return;
   }
