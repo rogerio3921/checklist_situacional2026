@@ -1920,7 +1920,10 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
   if (!el.onlineSyncStatus) return;
 
   if (!ONLINE_FEATURES_ENABLED) {
-    el.onlineSyncStatus.textContent = "Fluxo atual: preenchimento local com geração de relatório no navegador.";
+    const pm = computePriorityMatrix(state.answersById);
+    const stats = computeStats(state.answersById);
+    const partialPct = stats.total > 0 ? Math.round((pm.P2.length / stats.total) * 100) : 0;
+    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice parcial: ${pm.P2.length}/${stats.total} (${partialPct}%).`;
     el.onlineSyncStatus.style.color = "";
     return;
   }
