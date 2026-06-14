@@ -328,21 +328,21 @@ function computePriorityMatrix(answersById) {
 
 function computePartialIndex(answersById) {
   let partialWeighted = 0;
-  let answeredWeighted = 0;
+  let totalWeighted = 0;
 
   for (const q of getQuestions()) {
     const a = answersById[q.id]?.value;
     const w = questionFinalWeight(q);
+    totalWeighted += w;
     if (!a) continue;
 
-    answeredWeighted += w;
     if (a === "parcial") {
       partialWeighted += w;
     }
   }
 
-  const pct = answeredWeighted > 0 ? Math.round((partialWeighted / answeredWeighted) * 100) : 0;
-  return { partialWeighted, answeredWeighted, pct };
+  const pct = totalWeighted > 0 ? Math.round((partialWeighted / totalWeighted) * 100) : 0;
+  return { partialWeighted, totalWeighted, pct };
 }
 
 /* ---------- State ---------- */
@@ -1905,7 +1905,7 @@ function showDashboard() {
   el.kpiGlobal.textContent = `${stats.score}%`;
   el.kpiGlobalCoverage.textContent = `${stats.answered}/${stats.total} respondidas (${stats.progress}%)`;
   el.kpiPartialCount.textContent = partialCountLabel;
-  el.kpiPartialWeighted.textContent = `${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%) ponderado`;
+  el.kpiPartialWeighted.textContent = `${partial.partialWeighted}/${partial.totalWeighted} (${partial.pct}%) do checklist`;
   el.kpiC.textContent = `${idx.C}%`;
   el.kpiP.textContent = `${idx.P}%`;
   el.kpiI.textContent = `${idx.I}%`;
@@ -1953,7 +1953,7 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
     const pm = computePriorityMatrix(state.answersById);
     const stats = computeStats(state.answersById);
     const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
-    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice global nas respostas: ${stats.score}% (${stats.answered}/${stats.total} respondidas). Índice parcial: ${partialCountLabel}; peso ponderado ${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%).`;
+    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice global nas respostas: ${stats.score}% (${stats.answered}/${stats.total} respondidas). Índice parcial: ${partialCountLabel}; peso no checklist ${partial.partialWeighted}/${partial.totalWeighted} (${partial.pct}%).`;
     el.onlineSyncStatus.style.color = "";
     return;
   }
