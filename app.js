@@ -498,6 +498,7 @@ const el = {
   kpiP: document.getElementById("kpiP"),
   kpiI: document.getElementById("kpiI"),
   priorityTableBody: document.getElementById("priorityTableBody"),
+  priorityTopTableBody: document.getElementById("priorityTopTableBody"),
   modulesScoreBody: document.getElementById("modulesScoreBody"),
   btnSaveOnline: document.getElementById("btnSaveOnline"),
   btnLoadOnline: document.getElementById("btnLoadOnline"),
@@ -1969,6 +1970,31 @@ function showDashboard() {
     <tr><td><b>P3 — AÇÃO PLANEJADA</b></td><td class="mono">${riskPriority.P3.length}</td><td>Ajustes importantes com menor urgência imediata</td></tr>
     <tr><td><b>P4 — MONITORAMENTO</b></td><td class="mono">${riskPriority.P4.length}</td><td>Itens sob controle e manutenção de rotina</td></tr>
   `;
+
+  if (el.priorityTopTableBody) {
+    const topItems = [
+      ...riskPriority.P1.map(item => ({ ...item, bucket: "P1" })),
+      ...riskPriority.P2.map(item => ({ ...item, bucket: "P2" }))
+    ].slice(0, 10);
+
+    if (!topItems.length) {
+      el.priorityTopTableBody.innerHTML = `<tr><td colspan="5" class="muted">Sem achados de ação imediata/curto prazo no momento.</td></tr>`;
+    } else {
+      el.priorityTopTableBody.innerHTML = topItems.map(item => {
+        const answerText = formatAnswerPT(item.answer);
+        const priorityText = item.bucket === "P1" ? "P1 — Ação imediata" : "P2 — Curto prazo";
+        return `
+          <tr>
+            <td><b>${priorityText}</b></td>
+            <td>${escapeHtml(item.q.module)}</td>
+            <td>${escapeHtml(answerText)}</td>
+            <td>${escapeHtml(item.q.criticality || "—")}</td>
+            <td class="mono"><b>${item.riskScore}</b></td>
+          </tr>
+        `;
+      }).join("");
+    }
+  }
 
   const modules = getAllModules();
   el.modulesScoreBody.innerHTML = "";
