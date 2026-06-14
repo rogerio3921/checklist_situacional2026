@@ -102,6 +102,17 @@
       .kpi-c,.kpi-p,.kpi-i{grid-column:span 2}
     }
 
+    .dashboard-block{
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      padding:12px;
+      margin-bottom:12px;
+    }
+    .dashboard-block-h{margin-bottom:10px}
+    .dashboard-block-h h3{font-size:14px;font-weight:1000;line-height:1.25}
+    .dashboard-block-h p{margin-top:4px;font-size:12px;color:var(--muted);line-height:1.4}
+
     .q-list{display:flex;flex-direction:column;gap:10px}
     .q-item{
       border:1px solid var(--border);
@@ -447,67 +458,84 @@
               <button class="btn btn-ghost btn-sm" id="btnExportTxt" type="button">Exportar TXT</button>
               <button class="btn btn-danger btn-sm" id="btnResetAll" type="button">Nova avaliação (limpar tudo)</button>
             </div>
-            <div id="onlineSyncStatus" class="muted" style="margin-bottom:10px;font-size:12px;line-height:1.45">
-              Fluxo atual: preenchimento local com geração de relatório no navegador.
-            </div>
-
-            <div class="kpis kpis-dashboard">
-              <div class="kpi kpi-global">
-                <div class="label">Respostas Sim</div>
-                <div class="value mono" id="kpiGlobal">0/0 (0%)</div>
+            <div class="dashboard-block">
+              <div class="dashboard-block-h">
+                <h3>Resumo de Respostas</h3>
+                <p>Distribuição das respostas da avaliação com base nas 262 perguntas.</p>
               </div>
-              <div class="kpi kpi-partial">
-                <div class="label">Respostas Parcial</div>
-                <div class="value mono" id="kpiPartialCount">0/0 (0%)</div>
-              </div>
-              <div class="kpi kpi-nao">
-                <div class="label">Respostas Não</div>
-                <div class="value mono" id="kpiNaoCount">0/0 (0%)</div>
-              </div>
-              <div class="kpi kpi-c">
-                <div class="label">Compliance (C)</div>
-                <div class="value mono" id="kpiC">0%</div>
-              </div>
-              <div class="kpi kpi-p">
-                <div class="label">Performance (P)</div>
-                <div class="value mono" id="kpiP">0%</div>
-              </div>
-              <div class="kpi kpi-i">
-                <div class="label">Inteligência (I)</div>
-                <div class="value mono" id="kpiI">0%</div>
+              <div class="kpis kpis-dashboard">
+                <div class="kpi kpi-global">
+                  <div class="label">Respostas Sim</div>
+                  <div class="value mono" id="kpiGlobal">0/0 (0%)</div>
+                </div>
+                <div class="kpi kpi-partial">
+                  <div class="label">Respostas Parcial</div>
+                  <div class="value mono" id="kpiPartialCount">0/0 (0%)</div>
+                </div>
+                <div class="kpi kpi-nao">
+                  <div class="label">Respostas Não</div>
+                  <div class="value mono" id="kpiNaoCount">0/0 (0%)</div>
+                </div>
               </div>
             </div>
 
-            <div class="hr"></div>
+            <div class="dashboard-block">
+              <div class="dashboard-block-h">
+                <h3>Leitura por Camadas</h3>
+                <p>C mostra conformidade, P mostra eficiência operacional e I mostra maturidade de gestão.</p>
+              </div>
+              <div class="kpis kpis-dashboard">
+                <div class="kpi kpi-c">
+                  <div class="label">Compliance (C)</div>
+                  <div class="value mono" id="kpiC">0%</div>
+                </div>
+                <div class="kpi kpi-p">
+                  <div class="label">Performance (P)</div>
+                  <div class="value mono" id="kpiP">0%</div>
+                </div>
+                <div class="kpi kpi-i">
+                  <div class="label">Inteligência (I)</div>
+                  <div class="value mono" id="kpiI">0%</div>
+                </div>
+              </div>
+            </div>
 
-            <h3 style="font-size:14px;font-weight:1000;margin-bottom:10px">Matriz de Prioridade (baseada em respostas)</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Prioridade</th>
-                  <th>Qtd</th>
-                  <th>Regra</th>
-                </tr>
-              </thead>
-              <tbody id="priorityTableBody"></tbody>
-            </table>
+            <div class="dashboard-block">
+              <div class="dashboard-block-h">
+                <h3>Matriz de Prioridade</h3>
+                <p>Ajuda a priorizar ações: P1 é urgente (Não), P2 é atenção (Parcial) e P3 é conforme (Sim).</p>
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Prioridade</th>
+                    <th>Qtd</th>
+                    <th>Regra</th>
+                  </tr>
+                </thead>
+                <tbody id="priorityTableBody"></tbody>
+              </table>
+            </div>
 
-            <div class="hr"></div>
+            <div class="dashboard-block" style="margin-bottom:0">
+              <div class="dashboard-block-h">
+                <h3>Pontuação por Módulo</h3>
+                <p>Mostra desempenho ponderado por módulo para comparar avanço entre áreas.</p>
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Módulo</th>
+                    <th>Respondidas</th>
+                    <th>Pontos</th>
+                  </tr>
+                </thead>
+                <tbody id="modulesScoreBody"></tbody>
+              </table>
 
-            <h3 style="font-size:14px;font-weight:1000;margin-bottom:10px">Pontuação por módulo (ponderado)</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Módulo</th>
-                  <th>Respondidas</th>
-                  <th>Pontos</th>
-                </tr>
-              </thead>
-              <tbody id="modulesScoreBody"></tbody>
-            </table>
-
-            <div class="muted" style="margin-top:10px;font-size:12px;line-height:1.45">
-              Pontuação: Sim=100, Parcial=50, Não=0. Pesos: RDC15/2012=2, nãoRDC=1.
+              <div class="muted" style="margin-top:10px;font-size:12px;line-height:1.45">
+                Pontuação: Sim=100, Parcial=50, Não=0. Pesos: RDC15/2012=2, nãoRDC=1.
+              </div>
             </div>
           </div>
 
