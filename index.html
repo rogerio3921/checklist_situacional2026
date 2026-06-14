@@ -94,6 +94,13 @@
     .kpi-last-module{grid-column:1/-1}
     .kpi-last-module .value{white-space:normal;word-break:break-word;line-height:1.2}
 
+    .kpis-dashboard{display:grid;grid-template-columns:1fr;gap:10px}
+    @media(min-width:980px){
+      .kpis-dashboard{grid-template-columns:repeat(6,1fr)}
+      .kpi-global,.kpi-partial{grid-column:span 3}
+      .kpi-c,.kpi-p,.kpi-i{grid-column:span 2}
+    }
+
     .q-list{display:flex;flex-direction:column;gap:10px}
     .q-item{
       border:1px solid var(--border);
@@ -443,20 +450,24 @@
               Fluxo atual: preenchimento local com geração de relatório no navegador.
             </div>
 
-            <div class="kpis">
-              <div class="kpi">
+            <div class="kpis kpis-dashboard">
+              <div class="kpi kpi-global">
                 <div class="label">Índice Global (ponderado)</div>
                 <div class="value mono" id="kpiGlobal">0%</div>
               </div>
-              <div class="kpi">
+              <div class="kpi kpi-partial">
+                <div class="label">Índice Parcial (P2)</div>
+                <div class="value mono" id="kpiPartial">0/0 (0%)</div>
+              </div>
+              <div class="kpi kpi-c">
                 <div class="label">Compliance (C)</div>
                 <div class="value mono" id="kpiC">0%</div>
               </div>
-              <div class="kpi">
+              <div class="kpi kpi-p">
                 <div class="label">Performance (P)</div>
                 <div class="value mono" id="kpiP">0%</div>
               </div>
-              <div class="kpi">
+              <div class="kpi kpi-i">
                 <div class="label">Inteligência (I)</div>
                 <div class="value mono" id="kpiI">0%</div>
               </div>

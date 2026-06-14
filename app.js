@@ -423,6 +423,7 @@ const el = {
   btnToDashboard: document.getElementById("btnToDashboard"),
 
   kpiGlobal: document.getElementById("kpiGlobal"),
+  kpiPartial: document.getElementById("kpiPartial"),
   kpiC: document.getElementById("kpiC"),
   kpiP: document.getElementById("kpiP"),
   kpiI: document.getElementById("kpiI"),
@@ -1875,12 +1876,16 @@ function showDashboard() {
   el.rightSubtitle.textContent = "Resumo da avaliação";
 
   const idx = computeLayerIndices(state.answersById);
+  const stats = computeStats(state.answersById);
+  const pm = computePriorityMatrix(state.answersById);
+  const partialPct = stats.total > 0 ? Math.round((pm.P2.length / stats.total) * 100) : 0;
+
   el.kpiGlobal.textContent = `${idx.Global}%`;
+  el.kpiPartial.textContent = `${pm.P2.length}/${stats.total} (${partialPct}%)`;
   el.kpiC.textContent = `${idx.C}%`;
   el.kpiP.textContent = `${idx.P}%`;
   el.kpiI.textContent = `${idx.I}%`;
 
-  const pm = computePriorityMatrix(state.answersById);
   el.priorityTableBody.innerHTML = `
     <tr><td><b>P1 — CRÍTICO</b></td><td class="mono">${pm.P1.length}</td><td>Resposta = Não</td></tr>
     <tr><td><b>P2 — ALTO</b></td><td class="mono">${pm.P2.length}</td><td>Resposta = Parcial</td></tr>
