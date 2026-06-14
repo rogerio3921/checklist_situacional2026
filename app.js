@@ -330,6 +330,50 @@ function computePriorityMatrix(answersById) {
   return m;
 }
 
+function computeRiskPriorityMatrix(answersById) {
+  const m = { P1: [], P2: [], P3: [], P4: [] };
+  const sensitiveModules = new Set(["Esterilização", "Limpeza", "Rastreabilidade", "Recepção", "Preparo", "Governança"]);
+
+  for (const q of getQuestions()) {
+    const answer = answersById[q.id]?.value;
+    if (!["sim", "parcial", "nao"].includes(answer)) continue;
+
+    const critRank = criticalityRank(q.criticality);
+    const responseScore = answer === "nao" ? 40 : (answer === "parcial" ? 24 : 0);
+    const criticalityScore = critRank * 10;
+    const normaScore = q.norma === "RDC15/2012" ? 14 : 0;
+    const layerScore = q.layer === "C" ? 12 : (q.layer === "P" ? 7 : 4);
+    const weightScore = (Number(q.weight) > 0 ? Number(q.weight) : 1) * 3;
+    const moduleScore = sensitiveModules.has(q.module) ? 8 : 0;
+    const riskScore = responseScore + criticalityScore + normaScore + layerScore + weightScore + moduleScore;
+
+    const isHighRegulatoryRisk = critRank >= 3 && q.norma === "RDC15/2012" && q.layer === "C";
+
+    let bucket = "P4";
+    if (answer === "nao" && (riskScore >= 78 || isHighRegulatoryRisk)) {
+      bucket = "P1";
+    } else if ((answer === "nao" && riskScore >= 58) || (answer === "parcial" && (riskScore >= 68 || isHighRegulatoryRisk))) {
+      bucket = "P2";
+    } else if (answer === "nao" || answer === "parcial") {
+      bucket = "P3";
+    }
+
+    m[bucket].push({ q, answer, riskScore, critRank });
+  }
+
+  for (const key of Object.keys(m)) {
+    m[key].sort((a, b) => {
+      const byRisk = b.riskScore - a.riskScore;
+      if (byRisk !== 0) return byRisk;
+      const byCrit = b.critRank - a.critRank;
+      if (byCrit !== 0) return byCrit;
+      return String(a.q.module).localeCompare(String(b.q.module), "pt-BR");
+    });
+  }
+
+  return m;
+}
+
 function computePartialIndex(answersById) {
   let totalQuestions = 0;
   let partialQuestions = 0;
@@ -858,7 +902,7 @@ function getBasicReportData() {
   const inst = state.institution || {};
   const stats = computeStats(state.answersById);
   const indices = computeLayerIndices(state.answersById);
-  const priority = computePriorityMatrix(state.answersById);
+  const priority = computeRiskPriorityMatrix(state.answersById);
   const modules = getAllModules().map(moduleName => {
     const ms = computeModuleScore(moduleName, state.answersById);
     return {
@@ -905,7 +949,8 @@ function getBasicReportData() {
     priority: {
       p1: priority.P1.length,
       p2: priority.P2.length,
-      p3: priority.P3.length
+      p3: priority.P3.length,
+      p4: priority.P4.length
     },
     modules,
     responses
@@ -933,21 +978,26 @@ function openBasicReportWindow() {
   const summaryHtml = buildUnifiedPanoramaHtml(data);
 
   const priorityHtml = `
-    <div class="grid three">
+    <div class="grid two">
       <div class="priority-card priority-bad">
-        <div class="priority-title">P1 — Crítico</div>
+        <div class="priority-title">P1 — Ação imediata</div>
         <div class="priority-value">${data.priority.p1}</div>
-        <div class="priority-sub">respostas “Não”</div>
+        <div class="priority-sub">falha grave com alto risco regulatório/assistencial</div>
       </div>
       <div class="priority-card priority-warn">
-        <div class="priority-title">P2 — Alto</div>
+        <div class="priority-title">P2 — Curto prazo</div>
         <div class="priority-value">${data.priority.p2}</div>
-        <div class="priority-sub">respostas “Parcial”</div>
+        <div class="priority-sub">risco relevante que exige correção prioritária</div>
+      </div>
+      <div class="priority-card" style="background:#eef2ff;border-color:#dbe4ff">
+        <div class="priority-title">P3 — Ação planejada</div>
+        <div class="priority-value">${data.priority.p3}</div>
+        <div class="priority-sub">ajustes importantes com menor urgência</div>
       </div>
       <div class="priority-card priority-ok">
-        <div class="priority-title">P3 — OK</div>
-        <div class="priority-value">${data.priority.p3}</div>
-        <div class="priority-sub">respostas “Sim”</div>
+        <div class="priority-title">P4 — Monitoramento</div>
+        <div class="priority-value">${data.priority.p4}</div>
+        <div class="priority-sub">itens sob controle no cenário atual</div>
       </div>
     </div>
   `;
@@ -1003,7 +1053,7 @@ function openBasicReportWindow() {
           </section>
 
           <section class="section">
-            <h2>3. Matriz de Prioridade</h2>
+            <h2>3. Matriz de Prioridade (Risco e Ação)</h2>
             ${priorityHtml}
           </section>
 
@@ -1903,7 +1953,7 @@ function showDashboard() {
 
   const idx = computeLayerIndices(state.answersById);
   const stats = computeStats(state.answersById);
-  const pm = computePriorityMatrix(state.answersById);
+  const riskPriority = computeRiskPriorityMatrix(state.answersById);
   const partial = computePartialIndex(state.answersById);
 
   el.kpiGlobal.textContent = `${partial.simQuestions}/${partial.totalQuestions} (${partial.simPct}%)`;
@@ -1914,9 +1964,10 @@ function showDashboard() {
   el.kpiI.textContent = `${idx.I}%`;
 
   el.priorityTableBody.innerHTML = `
-    <tr><td><b>P1 — CRÍTICO</b></td><td class="mono">${pm.P1.length}</td><td>Resposta = Não</td></tr>
-    <tr><td><b>P2 — ALTO</b></td><td class="mono">${pm.P2.length}</td><td>Resposta = Parcial</td></tr>
-    <tr><td><b>P3 — OK</b></td><td class="mono">${pm.P3.length}</td><td>Resposta = Sim</td></tr>
+    <tr><td><b>P1 — AÇÃO IMEDIATA</b></td><td class="mono">${riskPriority.P1.length}</td><td>Falha grave + alto risco regulatório/assistencial</td></tr>
+    <tr><td><b>P2 — CURTO PRAZO</b></td><td class="mono">${riskPriority.P2.length}</td><td>Risco relevante com necessidade de correção prioritária</td></tr>
+    <tr><td><b>P3 — AÇÃO PLANEJADA</b></td><td class="mono">${riskPriority.P3.length}</td><td>Ajustes importantes com menor urgência imediata</td></tr>
+    <tr><td><b>P4 — MONITORAMENTO</b></td><td class="mono">${riskPriority.P4.length}</td><td>Itens sob controle e manutenção de rotina</td></tr>
   `;
 
   const modules = getAllModules();
@@ -2105,7 +2156,7 @@ function exportTxt() {
   const inst = state.institution || {};
   const idx = computeLayerIndices(state.answersById);
   const stats = computeStats(state.answersById);
-  const pm = computePriorityMatrix(state.answersById);
+  const riskPriority = computeRiskPriorityMatrix(state.answersById);
 
   const lines = [];
   lines.push("=".repeat(80));
@@ -2136,11 +2187,12 @@ function exportTxt() {
   lines.push(`Performance (P): ${idx.P}%`);
   lines.push(`Inteligência (I): ${idx.I}%`);
   lines.push("");
-  lines.push("MATRIZ DE PRIORIDADE");
+  lines.push("MATRIZ DE PRIORIDADE (RISCO E AÇÃO)");
   lines.push("-".repeat(80));
-  lines.push(`P1 (Não): ${pm.P1.length}`);
-  lines.push(`P2 (Parcial): ${pm.P2.length}`);
-  lines.push(`P3 (Sim): ${pm.P3.length}`);
+  lines.push(`P1 (Ação imediata): ${riskPriority.P1.length}`);
+  lines.push(`P2 (Curto prazo): ${riskPriority.P2.length}`);
+  lines.push(`P3 (Ação planejada): ${riskPriority.P3.length}`);
+  lines.push(`P4 (Monitoramento): ${riskPriority.P4.length}`);
   lines.push("");
 
   lines.push("RESPOSTAS (DETALHADAS)");
