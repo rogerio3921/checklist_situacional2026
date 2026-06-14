@@ -1975,7 +1975,7 @@ function showDashboard() {
     const topItems = [
       ...riskPriority.P1.map(item => ({ ...item, bucket: "P1" })),
       ...riskPriority.P2.map(item => ({ ...item, bucket: "P2" }))
-    ].slice(0, 10);
+    ].slice(0, 5);
 
     if (!topItems.length) {
       el.priorityTopTableBody.innerHTML = `<tr><td colspan="5" class="muted">Sem achados de ação imediata/curto prazo no momento.</td></tr>`;
