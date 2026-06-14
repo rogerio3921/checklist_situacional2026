@@ -327,22 +327,22 @@ function computePriorityMatrix(answersById) {
 }
 
 function computePartialIndex(answersById) {
-  let partialWeighted = 0;
-  let totalWeighted = 0;
+  let totalQuestions = 0;
+  let partialQuestions = 0;
+  let simQuestions = 0;
 
   for (const q of getQuestions()) {
     const a = answersById[q.id]?.value;
-    const w = questionFinalWeight(q);
-    totalWeighted += w;
-    if (!a) continue;
-
-    if (a === "parcial") {
-      partialWeighted += w;
-    }
+    totalQuestions += 1;
+    if (a === "parcial") partialQuestions += 1;
+    if (a === "sim") simQuestions += 1;
   }
 
-  const pct = totalWeighted > 0 ? Math.round((partialWeighted / totalWeighted) * 100) : 0;
-  return { partialWeighted, totalWeighted, pct };
+  // Base única por quantidade de perguntas: Sim=1, Parcial=0.5, Não/sem resposta=0.
+  const globalPct = totalQuestions > 0 ? Math.round(((simQuestions + partialQuestions * 0.5) / totalQuestions) * 100) : 0;
+  const partialPct = totalQuestions > 0 ? Math.round((partialQuestions / totalQuestions) * 100) : 0;
+
+  return { totalQuestions, simQuestions, partialQuestions, globalPct, partialPct };
 }
 
 /* ---------- State ---------- */
@@ -1902,10 +1902,10 @@ function showDashboard() {
   const partial = computePartialIndex(state.answersById);
   const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
 
-  el.kpiGlobal.textContent = `${stats.score}%`;
+  el.kpiGlobal.textContent = `${partial.globalPct}%`;
   el.kpiGlobalCoverage.textContent = `${stats.answered}/${stats.total} respondidas (${stats.progress}%)`;
   el.kpiPartialCount.textContent = partialCountLabel;
-  el.kpiPartialWeighted.textContent = `${partial.partialWeighted} pontos parciais de ${partial.totalWeighted} pontos totais (${partial.pct}%)`;
+  el.kpiPartialWeighted.textContent = `${partial.partialQuestions}/${partial.totalQuestions} perguntas (${partial.partialPct}%)`;
   el.kpiC.textContent = `${idx.C}%`;
   el.kpiP.textContent = `${idx.P}%`;
   el.kpiI.textContent = `${idx.I}%`;
@@ -1953,7 +1953,7 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
     const pm = computePriorityMatrix(state.answersById);
     const stats = computeStats(state.answersById);
     const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
-    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice global nas respostas: ${stats.score}% (${stats.answered}/${stats.total} respondidas). Índice parcial: ${partialCountLabel}; ${partial.partialWeighted} pontos parciais de ${partial.totalWeighted} pontos totais (${partial.pct}%).`;
+    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice global (base ${partial.totalQuestions} perguntas): ${partial.globalPct}%. Índice parcial: ${partialCountLabel} (${partial.partialQuestions}/${partial.totalQuestions} = ${partial.partialPct}%). Cobertura atual: ${stats.answered}/${stats.total} respondidas.`;
     el.onlineSyncStatus.style.color = "";
     return;
   }
