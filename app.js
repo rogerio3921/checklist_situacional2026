@@ -442,6 +442,7 @@ const el = {
   btnToDashboard: document.getElementById("btnToDashboard"),
 
   kpiGlobal: document.getElementById("kpiGlobal"),
+  kpiGlobalCoverage: document.getElementById("kpiGlobalCoverage"),
   kpiPartialCount: document.getElementById("kpiPartialCount"),
   kpiPartialWeighted: document.getElementById("kpiPartialWeighted"),
   kpiC: document.getElementById("kpiC"),
@@ -1901,7 +1902,8 @@ function showDashboard() {
   const partial = computePartialIndex(state.answersById);
   const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
 
-  el.kpiGlobal.textContent = `${idx.Global}%`;
+  el.kpiGlobal.textContent = `${stats.score}%`;
+  el.kpiGlobalCoverage.textContent = `${stats.answered}/${stats.total} respondidas (${stats.progress}%)`;
   el.kpiPartialCount.textContent = partialCountLabel;
   el.kpiPartialWeighted.textContent = `${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%) ponderado`;
   el.kpiC.textContent = `${idx.C}%`;
@@ -1949,8 +1951,9 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
   if (!ONLINE_FEATURES_ENABLED) {
     const partial = computePartialIndex(state.answersById);
     const pm = computePriorityMatrix(state.answersById);
+    const stats = computeStats(state.answersById);
     const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
-    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice parcial: ${partialCountLabel}; peso ponderado ${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%).`;
+    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice global nas respostas: ${stats.score}% (${stats.answered}/${stats.total} respondidas). Índice parcial: ${partialCountLabel}; peso ponderado ${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%).`;
     el.onlineSyncStatus.style.color = "";
     return;
   }
