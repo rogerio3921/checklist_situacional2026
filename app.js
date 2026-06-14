@@ -340,12 +340,11 @@ function computePartialIndex(answersById) {
     if (a === "nao") naoQuestions += 1;
   }
 
-  // Base única por quantidade de perguntas: Sim=1, Parcial=0.5, Não/sem resposta=0.
-  const globalPct = totalQuestions > 0 ? Math.round(((simQuestions + partialQuestions * 0.5) / totalQuestions) * 100) : 0;
+  const simPct = totalQuestions > 0 ? Math.round((simQuestions / totalQuestions) * 100) : 0;
   const partialPct = totalQuestions > 0 ? Math.round((partialQuestions / totalQuestions) * 100) : 0;
   const naoPct = totalQuestions > 0 ? Math.round((naoQuestions / totalQuestions) * 100) : 0;
 
-  return { totalQuestions, simQuestions, partialQuestions, naoQuestions, globalPct, partialPct, naoPct };
+  return { totalQuestions, simQuestions, partialQuestions, naoQuestions, simPct, partialPct, naoPct };
 }
 
 /* ---------- State ---------- */
@@ -1905,11 +1904,12 @@ function showDashboard() {
   const stats = computeStats(state.answersById);
   const pm = computePriorityMatrix(state.answersById);
   const partial = computePartialIndex(state.answersById);
+  const simCountLabel = pm.P3.length === 1 ? "1 pergunta sim" : `${pm.P3.length} perguntas sim`;
   const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
   const naoCountLabel = pm.P1.length === 1 ? "1 pergunta não" : `${pm.P1.length} perguntas não`;
 
-  el.kpiGlobal.textContent = `${partial.globalPct}%`;
-  el.kpiGlobalCoverage.textContent = `${stats.answered}/${stats.total} respondidas (${stats.progress}%)`;
+  el.kpiGlobal.textContent = simCountLabel;
+  el.kpiGlobalCoverage.textContent = `${partial.simQuestions}/${partial.totalQuestions} perguntas (${partial.simPct}%)`;
   el.kpiPartialCount.textContent = partialCountLabel;
   el.kpiPartialWeighted.textContent = `${partial.partialQuestions}/${partial.totalQuestions} perguntas (${partial.partialPct}%)`;
   el.kpiNaoCount.textContent = naoCountLabel;
@@ -1960,9 +1960,10 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
     const partial = computePartialIndex(state.answersById);
     const pm = computePriorityMatrix(state.answersById);
     const stats = computeStats(state.answersById);
+    const simCountLabel = pm.P3.length === 1 ? "1 pergunta sim" : `${pm.P3.length} perguntas sim`;
     const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
     const naoCountLabel = pm.P1.length === 1 ? "1 pergunta não" : `${pm.P1.length} perguntas não`;
-    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice global (base ${partial.totalQuestions} perguntas): ${partial.globalPct}%. Índice parcial: ${partialCountLabel} (${partial.partialQuestions}/${partial.totalQuestions} = ${partial.partialPct}%). Índice não conformidade: ${naoCountLabel} (${partial.naoQuestions}/${partial.totalQuestions} = ${partial.naoPct}%). Cobertura atual: ${stats.answered}/${stats.total} respondidas.`;
+    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice sim: ${simCountLabel} (${partial.simQuestions}/${partial.totalQuestions} = ${partial.simPct}%). Índice parcial: ${partialCountLabel} (${partial.partialQuestions}/${partial.totalQuestions} = ${partial.partialPct}%). Índice não conformidade: ${naoCountLabel} (${partial.naoQuestions}/${partial.totalQuestions} = ${partial.naoPct}%). Cobertura atual: ${stats.answered}/${stats.total} respondidas.`;
     el.onlineSyncStatus.style.color = "";
     return;
   }
