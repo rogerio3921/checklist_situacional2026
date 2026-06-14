@@ -442,7 +442,8 @@ const el = {
   btnToDashboard: document.getElementById("btnToDashboard"),
 
   kpiGlobal: document.getElementById("kpiGlobal"),
-  kpiPartial: document.getElementById("kpiPartial"),
+  kpiPartialCount: document.getElementById("kpiPartialCount"),
+  kpiPartialWeighted: document.getElementById("kpiPartialWeighted"),
   kpiC: document.getElementById("kpiC"),
   kpiP: document.getElementById("kpiP"),
   kpiI: document.getElementById("kpiI"),
@@ -1898,9 +1899,11 @@ function showDashboard() {
   const stats = computeStats(state.answersById);
   const pm = computePriorityMatrix(state.answersById);
   const partial = computePartialIndex(state.answersById);
+  const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
 
   el.kpiGlobal.textContent = `${idx.Global}%`;
-  el.kpiPartial.textContent = `${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%)`;
+  el.kpiPartialCount.textContent = partialCountLabel;
+  el.kpiPartialWeighted.textContent = `${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%) ponderado`;
   el.kpiC.textContent = `${idx.C}%`;
   el.kpiP.textContent = `${idx.P}%`;
   el.kpiI.textContent = `${idx.I}%`;
@@ -1945,7 +1948,9 @@ function renderOnlineSyncStatus(customText, tone = "muted") {
 
   if (!ONLINE_FEATURES_ENABLED) {
     const partial = computePartialIndex(state.answersById);
-    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice parcial ponderado: ${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%).`;
+    const pm = computePriorityMatrix(state.answersById);
+    const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
+    el.onlineSyncStatus.textContent = `Fluxo atual: preenchimento local com geração de relatório no navegador. Índice parcial: ${partialCountLabel}; peso ponderado ${partial.partialWeighted}/${partial.answeredWeighted} (${partial.pct}%).`;
     el.onlineSyncStatus.style.color = "";
     return;
   }
