@@ -444,11 +444,8 @@ const el = {
   btnToDashboard: document.getElementById("btnToDashboard"),
 
   kpiGlobal: document.getElementById("kpiGlobal"),
-  kpiGlobalCoverage: document.getElementById("kpiGlobalCoverage"),
   kpiPartialCount: document.getElementById("kpiPartialCount"),
-  kpiPartialWeighted: document.getElementById("kpiPartialWeighted"),
   kpiNaoCount: document.getElementById("kpiNaoCount"),
-  kpiNaoRate: document.getElementById("kpiNaoRate"),
   kpiC: document.getElementById("kpiC"),
   kpiP: document.getElementById("kpiP"),
   kpiI: document.getElementById("kpiI"),
@@ -1904,16 +1901,10 @@ function showDashboard() {
   const stats = computeStats(state.answersById);
   const pm = computePriorityMatrix(state.answersById);
   const partial = computePartialIndex(state.answersById);
-  const simCountLabel = pm.P3.length === 1 ? "1 pergunta sim" : `${pm.P3.length} perguntas sim`;
-  const partialCountLabel = pm.P2.length === 1 ? "1 pergunta parcial" : `${pm.P2.length} perguntas parciais`;
-  const naoCountLabel = pm.P1.length === 1 ? "1 pergunta não" : `${pm.P1.length} perguntas não`;
 
-  el.kpiGlobal.textContent = `${partial.simQuestions}`;
-  el.kpiGlobalCoverage.textContent = `${partial.simQuestions}/${partial.totalQuestions} (${partial.simPct}%)`;
-  el.kpiPartialCount.textContent = `${partial.partialQuestions}`;
-  el.kpiPartialWeighted.textContent = `${partial.partialQuestions}/${partial.totalQuestions} (${partial.partialPct}%)`;
-  el.kpiNaoCount.textContent = `${partial.naoQuestions}`;
-  el.kpiNaoRate.textContent = `${partial.naoQuestions}/${partial.totalQuestions} (${partial.naoPct}%)`;
+  el.kpiGlobal.textContent = `${partial.simQuestions}/${partial.totalQuestions} (${partial.simPct}%)`;
+  el.kpiPartialCount.textContent = `${partial.partialQuestions}/${partial.totalQuestions} (${partial.partialPct}%)`;
+  el.kpiNaoCount.textContent = `${partial.naoQuestions}/${partial.totalQuestions} (${partial.naoPct}%)`;
   el.kpiC.textContent = `${idx.C}%`;
   el.kpiP.textContent = `${idx.P}%`;
   el.kpiI.textContent = `${idx.I}%`;
