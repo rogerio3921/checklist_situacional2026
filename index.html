@@ -1,4 +1,3 @@
-```
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -295,16 +294,24 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>NS CheckList Situacional CME</h1>
-      <p>Checklist digital CME • Sim/Parcial/Não • Pontuação ponderada RDC15/2012 • foco em relatório e impressão</p>
+      <h1>Diagnóstico Situacional CME em minutos</h1>
+      <p>Avalie conformidade, desempenho e maturidade da sua CME com um checklist estruturado. Ao final, você recebe um índice consolidado e prioridades práticas de melhoria.</p>
+      <div class="btn-row" style="margin-top:10px">
+        <span class="pill">⏱ Tempo médio: 5–8 minutos</span>
+        <span class="pill">🔒 Dados protegidos</span>
+        <span class="pill">📊 Resultado imediato</span>
+      </div>
     </div>
 
     <!-- SETUP -->
     <section id="screenSetup" class="card" style="margin-top:12px;">
       <div class="card-h">
-        <h2>Identificação da Instituição</h2>
+        <div>
+          <h2>Comece seu diagnóstico</h2>
+          <div class="muted" style="font-size:12px;margin-top:4px">Preencha os dados abaixo para gerar seu checklist personalizado.</div>
+        </div>
         <div class="btn-row">
-          <button id="btnSetupClear" class="btn btn-danger btn-sm" type="button">Limpar dados</button>
+          <button id="btnSetupClear" class="btn btn-ghost btn-sm" type="button">Limpar formulário</button>
         </div>
       </div>
       <div class="card-b">
@@ -363,17 +370,24 @@
             <input id="email" type="email" required />
           </div>
           <div>
-            <label>Telefone *</label>
+            <label>Telefone/WhatsApp *</label>
             <input id="phone" type="tel" required />
           </div>
 
+          <div style="grid-column:1/-1">
+            <label style="display:flex;gap:8px;align-items:flex-start;font-weight:600">
+              <input type="checkbox" id="consentLgpd" required style="width:auto;margin-top:2px" />
+              <span>Autorizo o uso dos meus dados para contato técnico-comercial da NS, conforme a LGPD.</span>
+            </label>
+          </div>
+
           <div class="btn-row" style="grid-column:1/-1;margin-top:6px;">
-            <button class="btn btn-primary" type="submit">Salvar e continuar</button>
+            <button class="btn btn-primary" type="submit">Iniciar Diagnostico</button>
             <button class="btn btn-secondary" type="reset">Limpar campos</button>
           </div>
 
           <div class="muted" style="grid-column:1/-1;font-size:12px;line-height:1.45">
-            Dica: os dados ficam salvos neste navegador e podem ser sincronizados com a API quando o modo online estiver configurado.
+            Seus dados serão utilizados para personalizar seu diagnóstico e apoiar o retorno consultivo da equipe NS.
           </div>
         </form>
       </div>
@@ -707,5 +721,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-```
-index.html
