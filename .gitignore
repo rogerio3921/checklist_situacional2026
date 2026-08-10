@@ -1,3 +1,5 @@
 backend/node_modules/
 backend/cme_checklist.db
 backend/.env
+.DS_Store
+*.log
