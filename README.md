@@ -1,44 +1,82 @@
 # NS CheckList Situacional CME
 
-Aplicacao web para diagnostico situacional de CME, com preenchimento digital, dashboard de maturidade e geracao de relatorios.
+Aplicação web para diagnóstico situacional de CME, com preenchimento digital, dashboard de maturidade e geração de relatórios.
 
-## Estrutura
+## Requisitos
 
-- [index.html](index.html): interface principal
-- [app.js](app.js): logica do frontend
-- [questions.js](questions.js): base de perguntas
-- [recommendations.js](recommendations.js): recomendacoes automaticas
-- [config.js](config.js): configuracao de recursos opcionais
-- [backend/src/server.js](backend/src/server.js): API Node.js opcional para fase futura
+- Navegador moderno (Chrome, Edge ou Firefox atuais)
+- Servidor HTTP local para execução (não abrir via `file://`)
 
-## Uso local
+## Como rodar localmente
 
-Frontend:
+**Passo 1 — Clone o repositório:**
+```bash
+git clone https://github.com/rogerio3921/checklist_situacional2026.git
+cd checklist_situacional2026
+```
 
-1. Abra [index.html](index.html) no navegador.
+**Passo 2 — Inicie um servidor HTTP local:**
 
-O fluxo principal atual e local:
+Opção A — Python:
+```bash
+python -m http.server 8000
+```
 
-1. preencher a avaliacao no navegador
-2. visualizar dashboard e relatorios
-3. imprimir ou exportar o resultado
+Opção B — Node.js:
+```bash
+npx serve .
+```
 
-## Publicacao recomendada
+Opção C — VS Code: use a extensão **Live Server** e abra `index.html` por ela.
 
-- frontend: GitHub Pages
-- backend: opcional, para fase futura
+**Passo 3 — Acesse no navegador:**
+```
+http://localhost:8000
+```
 
-Guia resumido em [DEPLOY_PHASE1.md](DEPLOY_PHASE1.md).
+> ⚠️ Não abra o `index.html` diretamente como arquivo (`file://`). Scripts relativos podem falhar nesse modo.
 
-## Configuracao do modo online
+## Estrutura de pastas
 
-Nesta fase, o recomendado e manter o modo online desligado:
+```
+checklist_situacional2026/
+├── index.html          # Interface principal
+├── app.js              # Lógica do frontend
+├── questions.js        # Base de perguntas (266 itens)
+├── config.js           # Configuração de recursos opcionais
+├── recommendations.js  # Recomendações automáticas
+├── backend/            # API Node.js (opcional, fase futura)
+└── README.md
+```
 
+## Fluxo principal
+
+1. Preencher identificação da instituição
+2. Responder o diagnóstico (Sim / Parcial / Não)
+3. Visualizar o dashboard de maturidade por módulo
+4. Imprimir ou exportar o resultado em TXT
+
+## Troubleshooting
+
+| Erro | Causa | Solução |
+|------|-------|---------|
+| `ERR_FILE_NOT_FOUND` para `config.js` | Abertura via `file://` | Use servidor HTTP local |
+| `ReferenceError: questions is not defined` | `questions.js` não carregou | Serve via HTTP; verifique o console |
+| `SyntaxError: STORAGE_KEYS already declared` | `app.js` incluído duas vezes | Limpe o cache do navegador; recarregue |
+
+## Publicação recomendada
+
+- **Frontend:** GitHub Pages (automático via workflow `.github/workflows/deploy-pages.yml`)
+- **Backend:** opcional, para fase futura
+
+## Configuração do modo online
+
+```js
+// config.js
 window.CME_CONFIG = {
-	enableOnline: false,
-	apiBase: ""
+  enableOnline: false,
+  apiBase: ""
 };
+```
 
-## Observacao importante
-
-Os relatorios e o dashboard funcionam sem backend. A sincronizacao online pode ser reativada depois, quando houver necessidade de armazenamento centralizado.
+Mantenha `enableOnline: false` enquanto o backend não estiver disponível.
