@@ -18,13 +18,15 @@
    - orientação técnica
 */
 
-var STORAGE_KEYS = window.STORAGE_KEYS || {
+/* ---------- Storage keys (window assignment avoids SyntaxError on double-load) ---------- */
+window.STORAGE_KEYS = window.STORAGE_KEYS || {
   institution: "cme_mvp_institution_v3",
   answers: "cme_mvp_answers_v6",
   ui: "cme_mvp_ui_v4",
   customQuestions: "cme_mvp_custom_questions_v1"
 };
-window.STORAGE_KEYS = STORAGE_KEYS;
+// eslint-disable-next-line no-var
+var STORAGE_KEYS = window.STORAGE_KEYS; // var allows safe re-declaration if script is ever parsed twice
 
 const CATEGORY_LEGEND = {
   intro: "As camadas e categorias ajudam a interpretar o foco principal de cada pergunta no diagnóstico situacional da CME.",
@@ -105,7 +107,17 @@ function cloneDeep(obj) {
 
 /* ---------- Questions source ---------- */
 
-const baseQuestions = cloneDeep(questions);
+if (typeof window.questions === "undefined" || !Array.isArray(window.questions) || window.questions.length === 0) {
+  console.error("[CME] Erro crítico: questions.js não carregou corretamente. Execute o app via servidor HTTP local (ex: python -m http.server 8000).");
+  document.body.innerHTML = '<div style="font-family:sans-serif;padding:2rem;color:#7c2d12;background:#fee2e2;border-radius:8px;margin:2rem">' +
+    '<strong>Erro ao carregar as perguntas.</strong><br>' +
+    'Execute o aplicativo via servidor HTTP local, não pelo protocolo <code>file://</code>.<br>' +
+    '<code>python -m http.server 8000</code> e acesse <a href="http://localhost:8000">http://localhost:8000</a>.' +
+    '</div>';
+  throw new Error("[CME] questions is not defined or empty. Serve via HTTP.");
+}
+
+const baseQuestions = cloneDeep(window.questions);
 let activeQuestions = loadQuestions();
 
 function loadQuestions() {
