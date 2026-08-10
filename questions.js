@@ -468,6 +468,7 @@ const rawQuestions = [
 ];
 
 const questions = rawQuestions.map(enrichQuestion);
+window.questions = questions;
 
 console.log("✓ Arquivo questions.js atualizado carregado com sucesso");
 console.log("✓ Total de perguntas: " + questions.length);
