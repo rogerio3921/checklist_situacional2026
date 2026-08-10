@@ -18,13 +18,13 @@
    - orientação técnica
 */
 
-window.STORAGE_KEYS = {
+var STORAGE_KEYS = window.STORAGE_KEYS || {
   institution: "cme_mvp_institution_v3",
   answers: "cme_mvp_answers_v6",
   ui: "cme_mvp_ui_v4",
   customQuestions: "cme_mvp_custom_questions_v1"
 };
-var STORAGE_KEYS = window.STORAGE_KEYS;
+window.STORAGE_KEYS = STORAGE_KEYS;
 
 const CATEGORY_LEGEND = {
   intro: "As camadas e categorias ajudam a interpretar o foco principal de cada pergunta no diagnóstico situacional da CME.",
