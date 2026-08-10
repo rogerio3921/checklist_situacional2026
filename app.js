@@ -107,7 +107,7 @@ function cloneDeep(obj) {
 
 /* ---------- Questions source ---------- */
 
-if (typeof questions === "undefined" || !Array.isArray(questions) || questions.length === 0) {
+if (typeof window.questions === "undefined" || !Array.isArray(window.questions) || window.questions.length === 0) {
   console.error("[CME] Erro crítico: questions.js não carregou corretamente. Execute o app via servidor HTTP local (ex: python -m http.server 8000).");
   document.body.innerHTML = '<div style="font-family:sans-serif;padding:2rem;color:#7c2d12;background:#fee2e2;border-radius:8px;margin:2rem">' +
     '<strong>Erro ao carregar as perguntas.</strong><br>' +
@@ -117,7 +117,7 @@ if (typeof questions === "undefined" || !Array.isArray(questions) || questions.l
   throw new Error("[CME] questions is not defined or empty. Serve via HTTP.");
 }
 
-const baseQuestions = cloneDeep(questions);
+const baseQuestions = cloneDeep(window.questions);
 let activeQuestions = loadQuestions();
 
 function loadQuestions() {
