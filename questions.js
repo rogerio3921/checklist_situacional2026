@@ -468,7 +468,13 @@ const rawQuestions = [
 ];
 
 const questions = rawQuestions.map(enrichQuestion);
-window.questions = questions;
+if (typeof window !== "undefined") {
+  window.questions = questions;
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = questions;
+}
 
 console.log("✓ Arquivo questions.js atualizado carregado com sucesso");
 console.log("✓ Total de perguntas: " + questions.length);

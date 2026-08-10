@@ -729,9 +729,24 @@
     </div>
   </div>
 
-  <script src="config.js" defer></script>
-  <script src="questions.js" defer></script>
-  <script src="recommendations.js" defer></script>
-  <script src="app.js" defer></script>
+  <script>
+    (function bootstrapCmeApp() {
+      if (window.location.protocol === "file:") {
+        document.body.innerHTML = '<div style="font-family:sans-serif;padding:2rem;color:#7c2d12;background:#fee2e2;border-radius:8px;margin:2rem">' +
+          '<strong>Abra este app via servidor HTTP local.</strong><br>' +
+          'Não use <code>file://</code>. Execute <code>python -m http.server 8000</code> na pasta do projeto e acesse ' +
+          '<a href="http://localhost:8000">http://localhost:8000</a>.' +
+          '</div>';
+        return;
+      }
+
+      ["./config.js", "./questions.js", "./recommendations.js", "./app.js"].forEach(function (src) {
+        var script = document.createElement("script");
+        script.src = src;
+        script.async = false;
+        document.body.appendChild(script);
+      });
+    })();
+  </script>
 </body>
 </html>

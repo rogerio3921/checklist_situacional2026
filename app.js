@@ -25,8 +25,6 @@ window.STORAGE_KEYS = window.STORAGE_KEYS || {
   ui: "cme_mvp_ui_v4",
   customQuestions: "cme_mvp_custom_questions_v1"
 };
-// eslint-disable-next-line no-var
-var STORAGE_KEYS = window.STORAGE_KEYS; // var allows safe re-declaration if script is ever parsed twice
 
 const CATEGORY_LEGEND = {
   intro: "As camadas e categorias ajudam a interpretar o foco principal de cada pergunta no diagnóstico situacional da CME.",
@@ -121,7 +119,7 @@ const baseQuestions = cloneDeep(window.questions);
 let activeQuestions = loadQuestions();
 
 function loadQuestions() {
-  const saved = safeJSONParse(localStorage.getItem(STORAGE_KEYS.customQuestions), null);
+  const saved = safeJSONParse(localStorage.getItem(window.STORAGE_KEYS.customQuestions), null);
   if (Array.isArray(saved) && saved.length > 0) {
     return saved.map(normalizeQuestion);
   }
@@ -129,7 +127,7 @@ function loadQuestions() {
 }
 
 function persistQuestions() {
-  localStorage.setItem(STORAGE_KEYS.customQuestions, JSON.stringify(activeQuestions));
+  localStorage.setItem(window.STORAGE_KEYS.customQuestions, JSON.stringify(activeQuestions));
 }
 
 function getQuestions() {
@@ -411,9 +409,9 @@ function computePartialIndex(answersById) {
 /* ---------- State ---------- */
 
 const state = {
-  institution: safeJSONParse(localStorage.getItem(STORAGE_KEYS.institution), null),
-  answersById: safeJSONParse(localStorage.getItem(STORAGE_KEYS.answers), {}),
-  ui: safeJSONParse(localStorage.getItem(STORAGE_KEYS.ui), {
+  institution: safeJSONParse(localStorage.getItem(window.STORAGE_KEYS.institution), null),
+  answersById: safeJSONParse(localStorage.getItem(window.STORAGE_KEYS.answers), {}),
+  ui: safeJSONParse(localStorage.getItem(window.STORAGE_KEYS.ui), {
     lastModule: null,
     managerFilters: { module: "", layer: "", category: "" },
     lastOnlineAssessmentId: null,
@@ -447,9 +445,9 @@ if (typeof state.ui.lastOnlineSavedAt === "undefined") {
 }
 
 function persist() {
-  localStorage.setItem(STORAGE_KEYS.institution, JSON.stringify(state.institution));
-  localStorage.setItem(STORAGE_KEYS.answers, JSON.stringify(state.answersById));
-  localStorage.setItem(STORAGE_KEYS.ui, JSON.stringify(state.ui));
+  localStorage.setItem(window.STORAGE_KEYS.institution, JSON.stringify(state.institution));
+  localStorage.setItem(window.STORAGE_KEYS.answers, JSON.stringify(state.answersById));
+  localStorage.setItem(window.STORAGE_KEYS.ui, JSON.stringify(state.ui));
 }
 
 function removeAnswersForDeletedQuestions() {
@@ -2582,9 +2580,9 @@ function wire() {
 
   el.btnSetupClear.addEventListener("click", () => {
     if (!confirm("Limpar dados da instituição e respostas deste navegador?")) return;
-    localStorage.removeItem(STORAGE_KEYS.institution);
-    localStorage.removeItem(STORAGE_KEYS.answers);
-    localStorage.removeItem(STORAGE_KEYS.ui);
+    localStorage.removeItem(window.STORAGE_KEYS.institution);
+    localStorage.removeItem(window.STORAGE_KEYS.answers);
+    localStorage.removeItem(window.STORAGE_KEYS.ui);
     state.institution = null;
     state.answersById = {};
     state.ui = {
@@ -2642,9 +2640,9 @@ function wire() {
 
   el.btnResetAll.addEventListener("click", () => {
     if (!confirm("Nova avaliação: apagar dados e respostas deste navegador?")) return;
-    localStorage.removeItem(STORAGE_KEYS.institution);
-    localStorage.removeItem(STORAGE_KEYS.answers);
-    localStorage.removeItem(STORAGE_KEYS.ui);
+    localStorage.removeItem(window.STORAGE_KEYS.institution);
+    localStorage.removeItem(window.STORAGE_KEYS.answers);
+    localStorage.removeItem(window.STORAGE_KEYS.ui);
     location.reload();
   });
 
