@@ -1862,12 +1862,13 @@ function renderModules() {
     const ms = computeModuleScore(m, state.answersById);
     const progress = ms.total ? Math.round((ms.answered / ms.total) * 100) : 0;
     const cls = moduleClassification(ms.pct);
+    const safeModuleName = escapeHtml(m);
 
     const card = document.createElement("div");
     card.className = "module-card";
     card.innerHTML = `
       <div style="min-width:0">
-        <div class="module-title">${m}</div>
+        <div class="module-title">${safeModuleName}</div>
         <div class="module-meta">${ms.answered}/${ms.total} respondidas • Pontos: <b class="mono">${ms.pct}%</b></div>
         <div class="meter"><div style="width:${progress}%"></div></div>
       </div>
@@ -1920,6 +1921,12 @@ function renderQuestionItem(q, idx, total) {
 
   const current = getAnswerValue(q.id);
   const categoryDescription = getCategoryDescription(q.category);
+  const safeQuestionText = escapeHtml(q.text);
+  const safeLayer = escapeHtml(q.layer);
+  const safeLayerLabel = escapeHtml(layerLabel(q.layer));
+  const safeCategory = escapeHtml(q.category);
+  const safeSubmodule = escapeHtml(q.submodule || q.module);
+  const safeNorma = escapeHtml(q.norma || "nãoRDC");
 
   const top = document.createElement("div");
   top.className = "q-item-top";
@@ -1927,12 +1934,12 @@ function renderQuestionItem(q, idx, total) {
   const left = document.createElement("div");
   left.style.minWidth = "0";
   left.innerHTML = `
-    <div class="q-item-title">${idx + 1}/${total}. ${q.text}</div>
+    <div class="q-item-title">${idx + 1}/${total}. ${safeQuestionText}</div>
     <div class="q-item-sub">
-      <span class="pill">${q.layer} — ${layerLabel(q.layer)}</span>
-      <span class="pill" title="${escapeHtml(categoryDescription || q.category)}">Categoria: ${q.category}</span>
-      <span class="pill">${q.submodule || q.module}</span>
-      <span class="pill ${q.norma === "RDC15/2012" ? "pill-rdc" : "pill-nrdc"}">${q.norma || "nãoRDC"}</span>
+      <span class="pill">${safeLayer} — ${safeLayerLabel}</span>
+      <span class="pill" title="${escapeHtml(categoryDescription || q.category)}">Categoria: ${safeCategory}</span>
+      <span class="pill">${safeSubmodule}</span>
+      <span class="pill ${q.norma === "RDC15/2012" ? "pill-rdc" : "pill-nrdc"}">${safeNorma}</span>
       ${q.criticality ? `<span class="pill">Criticidade sugerida: ${escapeHtml(q.criticality)}</span>` : ""}
     </div>
   `;
@@ -2065,8 +2072,9 @@ function showDashboard() {
   for (const m of modules) {
     const ms = computeModuleScore(m, state.answersById);
     const tr = document.createElement("tr");
+    const safeModuleName = escapeHtml(m);
     tr.innerHTML = `
-      <td>${m}</td>
+      <td>${safeModuleName}</td>
       <td class="mono">${ms.sim}</td>
       <td class="mono">${ms.parcial}</td>
       <td class="mono">${ms.nao}</td>
