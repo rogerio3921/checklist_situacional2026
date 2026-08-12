@@ -571,6 +571,7 @@ const el = {
   btnResetAll: document.getElementById("btnResetAll"),
 
   btnPrintQuestions: document.getElementById("btnPrintQuestions"),
+  btnPrintResponses: document.getElementById("btnPrintResponses"),
   btnManageQuestions: document.getElementById("btnManageQuestions"),
 
   questionsManagerModal: document.getElementById("questionsManagerModal"),
@@ -1139,28 +1140,6 @@ function openBasicReportWindow() {
             </table>
           </section>
 
-          <section class="section">
-            <h2>5. Respostas Detalhadas</h2>
-            <div class="muted">Listagem completa das perguntas com resposta e criticidade sugerida.</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Módulo</th>
-                  <th>Submódulo</th>
-                  <th>Camada</th>
-                  <th>Categoria</th>
-                  <th>Norma</th>
-                  <th>Criticidade</th>
-                  <th>Resposta</th>
-                  <th>Pergunta</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${responsesRows}
-              </tbody>
-            </table>
-          </section>
         </div>
       </body>
     </html>
@@ -1734,26 +1713,6 @@ function openCompleteReportWindow() {
             ${pendingSummaryHtml}
           </section>
 
-          <section class="section">
-            <h2>11. Anexo detalhado</h2>
-            <div class="muted">Listagem completa das perguntas para rastreabilidade da avaliação.</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Módulo</th>
-                  <th>Submódulo</th>
-                  <th>Camada</th>
-                  <th>Categoria</th>
-                  <th>Norma</th>
-                  <th>Criticidade</th>
-                  <th>Resposta</th>
-                  <th>Pergunta</th>
-                </tr>
-              </thead>
-              <tbody>${responsesRows}</tbody>
-            </table>
-          </section>
         </div>
       </body>
     </html>
@@ -2382,6 +2341,73 @@ function printQuestionsList() {
   }, 300);
 }
 
+function printResponsesList() {
+  const data = getBasicReportData();
+  const rows = data.responses.map(item => `
+    <tr>
+      <td>${item.id}</td>
+      <td>${escapeHtml(item.module)}</td>
+      <td>${escapeHtml(item.submodule || "—")}</td>
+      <td>${escapeHtml(item.layer)} — ${escapeHtml(item.layerName)}</td>
+      <td>${escapeHtml(item.category)}${item.categoryDescription ? ` — ${escapeHtml(item.categoryDescription)}` : ""}</td>
+      <td>${escapeHtml(item.norma)}</td>
+      <td>${escapeHtml(item.criticality)}</td>
+      <td>${escapeHtml(item.answer)}</td>
+      <td>${escapeHtml(item.question)}</td>
+    </tr>
+  `).join("");
+
+  const html = `
+    <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Impressão das Respostas</title>
+        <style>
+          body{font-family:Arial,Helvetica,sans-serif;margin:24px;color:#111827}
+          h1{font-size:20px;margin-bottom:6px}
+          p{font-size:12px;color:#6b7280;margin-bottom:16px}
+          table{width:100%;border-collapse:collapse}
+          th,td{border:1px solid #d1d5db;padding:8px;font-size:12px;vertical-align:top;text-align:left}
+          th{background:#f3f4f6}
+        </style>
+      </head>
+      <body>
+        <h1>NS CheckList Situacional CME — Respostas</h1>
+        <p>Gerado em ${data.generatedAt} • Instituição: ${escapeHtml(data.institution.name || "—")}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Módulo</th>
+              <th>Submódulo</th>
+              <th>Camada</th>
+              <th>Categoria</th>
+              <th>Norma</th>
+              <th>Criticidade</th>
+              <th>Resposta</th>
+              <th>Pergunta</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body>
+    </html>
+  `;
+
+  const win = window.open("", "_blank", "width=1200,height=800");
+  if (!win) {
+    alert("Não foi possível abrir a janela de impressão. Verifique se o navegador bloqueou pop-ups.");
+    return;
+  }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => {
+    win.print();
+  }, 300);
+}
+
 /* ---------- Questions manager ---------- */
 
 function openQuestionsManager() {
@@ -2701,6 +2727,10 @@ function wire() {
 
   if (el.btnPrintQuestions) {
     el.btnPrintQuestions.addEventListener("click", printQuestionsList);
+  }
+
+  if (el.btnPrintResponses) {
+    el.btnPrintResponses.addEventListener("click", printResponsesList);
   }
 
   if (el.btnManageQuestions) {
