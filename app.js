@@ -104,6 +104,62 @@ function cloneDeep(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
+function createStorageAdapter() {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const probeKey = "__cme_storage_probe__";
+      window.localStorage.setItem(probeKey, "1");
+      window.localStorage.removeItem(probeKey);
+      return window.localStorage;
+    }
+  } catch {
+    // Fallback below for blocked/opaque origins such as some file:// contexts.
+  }
+
+  const fallbackPrefix = "__CME_FALLBACK_STORAGE__:";
+  const memoryStore = window.__CME_FALLBACK_STORAGE__ && typeof window.__CME_FALLBACK_STORAGE__ === "object"
+    ? window.__CME_FALLBACK_STORAGE__
+    : {};
+
+  window.__CME_FALLBACK_STORAGE__ = memoryStore;
+
+  function readFallbackStore() {
+    const rawName = typeof window.name === "string" ? window.name : "";
+    if (rawName.startsWith(fallbackPrefix)) {
+      const restored = safeJSONParse(rawName.slice(fallbackPrefix.length), null);
+      if (restored && typeof restored === "object") {
+        Object.assign(memoryStore, restored);
+      }
+    }
+    return memoryStore;
+  }
+
+  function persistFallbackStore() {
+    try {
+      window.name = `${fallbackPrefix}${JSON.stringify(memoryStore)}`;
+    } catch {
+      // Keep in-memory state only when window.name cannot be updated.
+    }
+  }
+
+  return {
+    getItem(key) {
+      const store = readFallbackStore();
+      return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null;
+    },
+    setItem(key, value) {
+      memoryStore[key] = String(value);
+      persistFallbackStore();
+    },
+    removeItem(key) {
+      delete memoryStore[key];
+      persistFallbackStore();
+    }
+  };
+}
+
+const storage = createStorageAdapter();
+
 /* ---------- Questions source ---------- */
 
 const loadedQuestions = Array.isArray(window.questions)
@@ -116,7 +172,7 @@ const baseQuestions = cloneDeep(loadedQuestions);
 let activeQuestions = loadQuestions();
 
 function loadQuestions() {
-  const saved = safeJSONParse(localStorage.getItem(STORAGE_KEYS.customQuestions), null);
+  const saved = safeJSONParse(storage.getItem(STORAGE_KEYS.customQuestions), null);
   if (Array.isArray(saved) && saved.length > 0) {
     return saved.map(normalizeQuestion);
   }
@@ -124,7 +180,7 @@ function loadQuestions() {
 }
 
 function persistQuestions() {
-  localStorage.setItem(STORAGE_KEYS.customQuestions, JSON.stringify(activeQuestions));
+  storage.setItem(STORAGE_KEYS.customQuestions, JSON.stringify(activeQuestions));
 }
 
 function getQuestions() {
@@ -406,9 +462,9 @@ function computePartialIndex(answersById) {
 /* ---------- State ---------- */
 
 const state = {
-  institution: safeJSONParse(localStorage.getItem(STORAGE_KEYS.institution), null),
-  answersById: safeJSONParse(localStorage.getItem(STORAGE_KEYS.answers), {}),
-  ui: safeJSONParse(localStorage.getItem(STORAGE_KEYS.ui), {
+  institution: safeJSONParse(storage.getItem(STORAGE_KEYS.institution), null),
+  answersById: safeJSONParse(storage.getItem(STORAGE_KEYS.answers), {}),
+  ui: safeJSONParse(storage.getItem(STORAGE_KEYS.ui), {
     lastModule: null,
     managerFilters: { module: "", layer: "", category: "" },
     lastOnlineAssessmentId: null,
@@ -442,9 +498,9 @@ if (typeof state.ui.lastOnlineSavedAt === "undefined") {
 }
 
 function persist() {
-  localStorage.setItem(STORAGE_KEYS.institution, JSON.stringify(state.institution));
-  localStorage.setItem(STORAGE_KEYS.answers, JSON.stringify(state.answersById));
-  localStorage.setItem(STORAGE_KEYS.ui, JSON.stringify(state.ui));
+  storage.setItem(STORAGE_KEYS.institution, JSON.stringify(state.institution));
+  storage.setItem(STORAGE_KEYS.answers, JSON.stringify(state.answersById));
+  storage.setItem(STORAGE_KEYS.ui, JSON.stringify(state.ui));
 }
 
 function removeAnswersForDeletedQuestions() {
@@ -2577,9 +2633,9 @@ function wire() {
 
   el.btnSetupClear.addEventListener("click", () => {
     if (!confirm("Limpar dados da instituição e respostas deste navegador?")) return;
-    localStorage.removeItem(STORAGE_KEYS.institution);
-    localStorage.removeItem(STORAGE_KEYS.answers);
-    localStorage.removeItem(STORAGE_KEYS.ui);
+    storage.removeItem(STORAGE_KEYS.institution);
+    storage.removeItem(STORAGE_KEYS.answers);
+    storage.removeItem(STORAGE_KEYS.ui);
     state.institution = null;
     state.answersById = {};
     state.ui = {
@@ -2637,9 +2693,9 @@ function wire() {
 
   el.btnResetAll.addEventListener("click", () => {
     if (!confirm("Nova avaliação: apagar dados e respostas deste navegador?")) return;
-    localStorage.removeItem(STORAGE_KEYS.institution);
-    localStorage.removeItem(STORAGE_KEYS.answers);
-    localStorage.removeItem(STORAGE_KEYS.ui);
+    storage.removeItem(STORAGE_KEYS.institution);
+    storage.removeItem(STORAGE_KEYS.answers);
+    storage.removeItem(STORAGE_KEYS.ui);
     location.reload();
   });
 
