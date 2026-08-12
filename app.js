@@ -2067,10 +2067,10 @@ function showDashboard() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${m}</td>
+      <td class="mono">${ms.answered}/${ms.total}</td>
       <td class="mono">${ms.sim}</td>
       <td class="mono">${ms.parcial}</td>
       <td class="mono">${ms.nao}</td>
-      <td class="mono">${ms.answered}/${ms.total}</td>
       <td class="mono"><b>${ms.pct}%</b></td>
     `;
     el.modulesScoreBody.appendChild(tr);
