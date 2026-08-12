@@ -413,15 +413,9 @@
     </div>
   </div>
 
-  <script>
-  (function bootstrapCmeApp() {
-    ["./questions.js", "./recommendations.js", "./app.js"].forEach(function (src) {
-      var script = document.createElement("script");
-      script.src = src;
-      script.async = false;
-      document.body.appendChild(script);
-    });
-  })();
-</script>
+  <script src="./config.js"></script>
+  <script src="./questions.js"></script>
+  <script src="./recommendations.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
